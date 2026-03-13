@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../services/notification_service.dart';
+import '../../auth/application/auth_controller.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../cart/application/cart_controller.dart';
 import '../../cart/domain/cart_line_item.dart';
 import '../application/menu_controller.dart' as menu_feature;
@@ -18,6 +20,7 @@ class MenuPage extends StatefulWidget {
 class _MenuPageState extends State<MenuPage> {
   final menu_feature.MenuController _menuController =
       menu_feature.MenuController();
+  final AuthController _authController = AuthController();
   final CartController _cartController = CartController();
   final NotificationService _notificationService = NotificationService.instance;
   final Set<String> _favoriteItemIds = <String>{};
@@ -370,6 +373,26 @@ class _MenuPageState extends State<MenuPage> {
     }
   }
 
+  Future<void> _handleAccountSelection(String value) async {
+    switch (value) {
+      case 'sign_in':
+        if (!mounted) {
+          return;
+        }
+        await Navigator.pushNamed(context, AppRoutes.auth);
+        break;
+      case 'sign_out':
+        await _authController.signOut();
+        if (!mounted) {
+          return;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed out successfully.')),
+        );
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<MenuScreenState>(
@@ -409,6 +432,64 @@ class _MenuPageState extends State<MenuPage> {
             scrolledUnderElevation: 0,
             title: const Text('Favorite'),
             actions: [
+              StreamBuilder<AuthUser?>(
+                stream: _authController.watchAuthUser(),
+                builder: (context, snapshot) {
+                  final user = snapshot.data;
+
+                  return PopupMenuButton<String>(
+                    tooltip: user == null ? 'Sign in' : 'Account',
+                    onSelected: _handleAccountSelection,
+                    itemBuilder: (context) {
+                      if (user == null) {
+                        return const [
+                          PopupMenuItem<String>(
+                            value: 'sign_in',
+                            child: Text('Sign in'),
+                          ),
+                        ];
+                      }
+
+                      return [
+                        PopupMenuItem<String>(
+                          enabled: false,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name,
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                user.email,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                        const PopupMenuItem<String>(
+                          value: 'sign_out',
+                          child: Text('Sign out'),
+                        ),
+                      ];
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFFFFE5F0),
+                        child: Icon(
+                          user == null
+                              ? Icons.login_rounded
+                              : Icons.person_rounded,
+                          color: const Color(0xFFE91E63),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
               ValueListenableBuilder<List<CartLineItem>>(
                 valueListenable: _cartController.watchItems(),
                 builder: (context, items, _) {
