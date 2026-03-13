@@ -1,15 +1,16 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/firebase/firestore_paths.dart';
+import '../../../services/notification_service.dart';
 import '../domain/auth_user.dart';
 
 class AuthRepository {
-  AuthRepository({
-    FirebaseFirestore? firestore,
-    FirebaseAuth? auth,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _auth = auth ?? FirebaseAuth.instance;
+  AuthRepository({FirebaseFirestore? firestore, FirebaseAuth? auth})
+    : _firestore = firestore ?? FirebaseFirestore.instance,
+      _auth = auth ?? FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
@@ -24,14 +25,14 @@ class AuthRepository {
         return Stream<AuthUser?>.value(null);
       }
 
-      final userRef =
-          _firestore.collection(FirestorePaths.users).doc(firebaseUser.uid);
+      unawaited(NotificationService.instance.syncUserToken(firebaseUser.uid));
+
+      final userRef = _firestore
+          .collection(FirestorePaths.users)
+          .doc(firebaseUser.uid);
 
       return userRef.snapshots().asyncMap(
-        (doc) => _createOrLoadUserProfile(
-          firebaseUser,
-          document: doc,
-        ),
+        (doc) => _createOrLoadUserProfile(firebaseUser, document: doc),
       );
     });
   }
@@ -41,6 +42,8 @@ class AuthRepository {
     if (firebaseUser == null) {
       throw StateError('No signed-in Firebase user was found.');
     }
+
+    await NotificationService.instance.syncUserToken(firebaseUser.uid);
 
     final doc = await _firestore
         .collection(FirestorePaths.users)
@@ -63,7 +66,9 @@ class AuthRepository {
     required String password,
   }) async {
     await _auth.signInWithEmailAndPassword(email: email, password: password);
-    return getCurrentUser();
+    final user = await getCurrentUser();
+    await NotificationService.instance.syncUserToken(user.id);
+    return user;
   }
 
   Future<AuthUser> registerWithEmailAndPassword({
@@ -94,6 +99,7 @@ class AuthRepository {
     );
 
     await saveUser(authUser);
+    await NotificationService.instance.syncUserToken(authUser.id);
     return authUser;
   }
 
@@ -112,7 +118,8 @@ class AuthRepository {
     User firebaseUser, {
     DocumentSnapshot<Map<String, dynamic>>? document,
   }) async {
-    final existingDocument = document ??
+    final existingDocument =
+        document ??
         await _firestore
             .collection(FirestorePaths.users)
             .doc(firebaseUser.uid)

@@ -1,15 +1,19 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/firebase/firestore_paths.dart';
 import '../../menu/domain/meal_session.dart';
 import '../../menu/domain/menu_item.dart';
 import '../../orders/domain/order_summary.dart';
+import '../../orders/domain/order_statuses.dart';
+import '../domain/admin_dashboard_state.dart';
 import '../domain/admin_metric.dart';
 import '../domain/business_settings.dart';
 
 class AdminRepository {
   AdminRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
 
@@ -20,7 +24,8 @@ class AdminRepository {
       AdminMetric(label: 'Support phone', value: settings.phone),
       AdminMetric(
         label: 'Default delivery fee',
-        value: '${settings.currency} ${settings.deliveryFee.toStringAsFixed(0)}',
+        value:
+            '${settings.currency} ${settings.deliveryFee.toStringAsFixed(0)}',
       ),
       AdminMetric(
         label: 'Ordering',
@@ -84,14 +89,13 @@ class AdminRepository {
         .collection(FirestorePaths.mealSessions)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map(MealSession.fromFirestore)
-              .toList()
-            ..sort((a, b) {
-              final aMinutes = (a.startHour * 60) + a.startMinute;
-              final bMinutes = (b.startHour * 60) + b.startMinute;
-              return aMinutes.compareTo(bMinutes);
-            }),
+          (snapshot) =>
+              snapshot.docs.map(MealSession.fromFirestore).toList()
+                ..sort((a, b) {
+                  final aMinutes = (a.startHour * 60) + a.startMinute;
+                  final bMinutes = (b.startHour * 60) + b.startMinute;
+                  return aMinutes.compareTo(bMinutes);
+                }),
         );
   }
 
@@ -100,10 +104,9 @@ class AdminRepository {
         .collection(FirestorePaths.menuItems)
         .snapshots()
         .map(
-          (snapshot) => snapshot.docs
-              .map(MenuItem.fromFirestore)
-              .toList()
-            ..sort((a, b) => a.name.compareTo(b.name)),
+          (snapshot) =>
+              snapshot.docs.map(MenuItem.fromFirestore).toList()
+                ..sort((a, b) => a.name.compareTo(b.name)),
         );
   }
 
@@ -130,6 +133,108 @@ class AdminRepository {
         );
   }
 
+  Stream<AdminDashboardState> watchDashboard() {
+    final controller = StreamController<AdminDashboardState>.broadcast();
+
+    BusinessSettings? settings;
+    List<MealSession> sessions = const [];
+    List<MenuItem> items = const [];
+    QuerySnapshot<Map<String, dynamic>>? orderSnapshot;
+
+    void emit() {
+      if (settings == null || orderSnapshot == null) {
+        return;
+      }
+
+      final now = DateTime.now();
+      final todayOrdersCount = orderSnapshot!.docs.where((doc) {
+        final createdAt = (doc.data()['createdAt'] as Timestamp?)?.toDate();
+        if (createdAt == null) {
+          return false;
+        }
+
+        return createdAt.year == now.year &&
+            createdAt.month == now.month &&
+            createdAt.day == now.day;
+      }).length;
+
+      final pendingOrdersCount = orderSnapshot!.docs.where((doc) {
+        return (doc.data()['status'] as String? ?? OrderStatuses.pending) ==
+            OrderStatuses.pending;
+      }).length;
+
+      final activeSession = _findActiveSession(sessions, now: now);
+      final soldOutItemsCount = items.where((item) {
+        return !item.isAvailable || item.stock <= 0;
+      }).length;
+
+      controller.add(
+        AdminDashboardState(
+          todaysOrdersCount: todayOrdersCount,
+          pendingOrdersCount: pendingOrdersCount,
+          activeMealSessionName: activeSession?.name ?? 'No active session',
+          soldOutItemsCount: soldOutItemsCount,
+          businessName: settings!.businessName,
+          bannerMessage: settings!.bannerMessage,
+          activeOffer: settings!.activeOffer,
+          pickupEnabled: settings!.pickupEnabled,
+          orderingOpen: settings!.orderingOpen,
+        ),
+      );
+    }
+
+    final settingsSub = watchBusinessSettings().listen((value) {
+      settings = value;
+      emit();
+    });
+
+    final sessionsSub = watchMealSessions().listen((value) {
+      sessions = value;
+      emit();
+    });
+
+    final itemsSub = watchMenuItems().listen((value) {
+      items = value;
+      emit();
+    });
+
+    final ordersSub = _firestore
+        .collection(FirestorePaths.orders)
+        .snapshots()
+        .listen((value) {
+          orderSnapshot = value;
+          emit();
+        });
+
+    controller.onCancel = () async {
+      await settingsSub.cancel();
+      await sessionsSub.cancel();
+      await itemsSub.cancel();
+      await ordersSub.cancel();
+    };
+
+    return controller.stream;
+  }
+
+  MealSession? _findActiveSession(List<MealSession> sessions, {DateTime? now}) {
+    final currentTime = now ?? DateTime.now();
+    final currentMinutes = (currentTime.hour * 60) + currentTime.minute;
+
+    for (final session in sessions) {
+      if (!session.isActive) {
+        continue;
+      }
+
+      final start = (session.startHour * 60) + session.startMinute;
+      final end = (session.endHour * 60) + session.endMinute;
+      if (currentMinutes >= start && currentMinutes <= end) {
+        return session;
+      }
+    }
+
+    return null;
+  }
+
   Future<void> saveMealSession(MealSession session) {
     return _firestore
         .collection(FirestorePaths.mealSessions)
@@ -138,7 +243,10 @@ class AdminRepository {
   }
 
   Future<void> deleteMealSession(String sessionId) {
-    return _firestore.collection(FirestorePaths.mealSessions).doc(sessionId).delete();
+    return _firestore
+        .collection(FirestorePaths.mealSessions)
+        .doc(sessionId)
+        .delete();
   }
 
   Future<void> saveMenuItem(MenuItem item) {

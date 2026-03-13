@@ -7,6 +7,7 @@ class MenuItem {
     required this.description,
     required this.price,
     required this.imageUrl,
+    required this.localImageAsset,
     required this.categoryName,
     required this.mealSessionId,
     required this.isAvailable,
@@ -19,6 +20,7 @@ class MenuItem {
   final String description;
   final double price;
   final String imageUrl;
+  final String localImageAsset;
   final String categoryName;
   final String mealSessionId;
   final bool isAvailable;
@@ -33,6 +35,7 @@ class MenuItem {
       description: data['description'] as String? ?? '',
       price: (data['price'] as num?)?.toDouble() ?? 0,
       imageUrl: data['imageUrl'] as String? ?? '',
+      localImageAsset: data['localImageAsset'] as String? ?? '',
       categoryName: data['categoryName'] as String? ?? 'General',
       mealSessionId: data['mealSessionId'] as String? ?? '',
       isAvailable: data['isAvailable'] as bool? ?? false,
@@ -47,6 +50,7 @@ class MenuItem {
       'description': description,
       'price': price,
       'imageUrl': imageUrl,
+      'localImageAsset': localImageAsset,
       'categoryName': categoryName,
       'mealSessionId': mealSessionId,
       'isAvailable': isAvailable,

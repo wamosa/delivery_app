@@ -94,8 +94,9 @@ class _RoleBasedHome extends StatelessWidget {
       case AuthRole.admin:
       case AuthRole.counter:
       case AuthRole.rider:
-      case AuthRole.customer:
         return HomePage(user: user);
+      case AuthRole.customer:
+        return const MenuPage();
     }
   }
 }

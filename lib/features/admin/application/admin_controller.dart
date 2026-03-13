@@ -1,4 +1,5 @@
 import '../data/admin_repository.dart';
+import '../domain/admin_dashboard_state.dart';
 import '../domain/admin_metric.dart';
 import '../domain/business_settings.dart';
 import '../../menu/domain/meal_session.dart';
@@ -7,12 +8,16 @@ import '../../orders/domain/order_summary.dart';
 
 class AdminController {
   AdminController({AdminRepository? repository})
-      : _repository = repository ?? AdminRepository();
+    : _repository = repository ?? AdminRepository();
 
   final AdminRepository _repository;
 
   Future<List<AdminMetric>> loadMetrics() {
     return _repository.loadMetrics();
+  }
+
+  Stream<AdminDashboardState> watchDashboard() {
+    return _repository.watchDashboard();
   }
 
   Future<BusinessSettings> loadBusinessSettings() {
