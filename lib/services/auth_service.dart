@@ -7,12 +7,31 @@ class AuthService {
 
   User? get currentUser => _auth.currentUser;
 
-  Future<User?> ensureSignedIn() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      return user;
-    }
-    final credential = await _auth.signInAnonymously();
-    return credential.user;
+  Stream<User?> authStateChanges() {
+    return _auth.authStateChanges();
+  }
+
+  Future<UserCredential> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) {
+    return _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<UserCredential> createUserWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) {
+    return _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<void> signOut() {
+    return _auth.signOut();
   }
 }

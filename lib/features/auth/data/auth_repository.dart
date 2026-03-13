@@ -14,6 +14,10 @@ class AuthRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
+  Stream<User?> authStateChanges() {
+    return _auth.authStateChanges();
+  }
+
   Future<AuthUser> getCurrentUser() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) {
@@ -57,6 +61,49 @@ class AuthRepository {
         .doc(userId)
         .snapshots()
         .map((doc) => AuthUser.fromFirestore(doc));
+  }
+
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    await _auth.signInWithEmailAndPassword(email: email, password: password);
+    return getCurrentUser();
+  }
+
+  Future<AuthUser> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String name,
+  }) async {
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    final user = credential.user;
+    if (user == null) {
+      throw StateError('Firebase did not return a signed-in user.');
+    }
+
+    if (name.trim().isNotEmpty) {
+      await user.updateDisplayName(name.trim());
+    }
+
+    final authUser = AuthUser(
+      id: user.uid,
+      name: name.trim().isEmpty ? 'Ayeyo Customer' : name.trim(),
+      phone: user.phoneNumber ?? '',
+      email: user.email ?? email,
+      role: 'customer',
+    );
+
+    await saveUser(authUser);
+    return authUser;
+  }
+
+  Future<void> signOut() {
+    return _auth.signOut();
   }
 
   Future<void> saveUser(AuthUser user) {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../core/theme/app_theme.dart';
 import '../features/admin/presentation/admin_page.dart';
+import '../features/auth/application/auth_controller.dart';
 import '../features/auth/presentation/auth_page.dart';
 import '../features/cart/presentation/cart_page.dart';
 import '../features/checkout/presentation/checkout_page.dart';
@@ -15,14 +17,30 @@ class AyeyoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = AuthController();
+
     return MaterialApp(
       title: 'Ayeyo Delivery',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      initialRoute: AppRoutes.home,
+      home: StreamBuilder<User?>(
+        stream: authController.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.data == null) {
+            return const AuthPage();
+          }
+
+          return const HomePage();
+        },
+      ),
       routes: {
         AppRoutes.auth: (_) => const AuthPage(),
-        AppRoutes.home: (_) => const HomePage(),
         AppRoutes.menu: (_) => const MenuPage(),
         AppRoutes.cart: (_) => const CartPage(),
         AppRoutes.checkout: (_) => const CheckoutPage(),

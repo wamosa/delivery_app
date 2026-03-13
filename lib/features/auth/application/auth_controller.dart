@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../data/auth_repository.dart';
 import '../domain/auth_user.dart';
 
@@ -17,5 +19,35 @@ class AuthController {
 
   Future<void> saveUser(AuthUser user) {
     return _repository.saveUser(user);
+  }
+
+  Stream<User?> authStateChanges() {
+    return _repository.authStateChanges();
+  }
+
+  Future<AuthUser> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) {
+    return _repository.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+  }
+
+  Future<AuthUser> registerWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String name,
+  }) {
+    return _repository.registerWithEmailAndPassword(
+      email: email,
+      password: password,
+      name: name,
+    );
+  }
+
+  Future<void> signOut() {
+    return _repository.signOut();
   }
 }
