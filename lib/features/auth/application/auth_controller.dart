@@ -25,6 +25,10 @@ class AuthController {
     return _repository.authStateChanges();
   }
 
+  Stream<AuthUser?> watchAuthUser() {
+    return _repository.watchAuthUser();
+  }
+
   Future<AuthUser> signInWithEmailAndPassword({
     required String email,
     required String password,

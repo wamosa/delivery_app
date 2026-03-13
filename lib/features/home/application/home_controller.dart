@@ -1,3 +1,4 @@
+import '../../auth/domain/auth_user.dart';
 import '../data/home_repository.dart';
 import '../domain/dashboard_item.dart';
 
@@ -7,7 +8,7 @@ class HomeController {
 
   final HomeRepository _repository;
 
-  List<DashboardItem> loadModules() {
-    return _repository.loadModules();
+  List<DashboardItem> loadModules(AuthRole role) {
+    return _repository.loadModules(role);
   }
 }

@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 
+import '../../auth/domain/auth_user.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/home_controller.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({
+    required this.user,
+    super.key,
+  });
+
+  final AuthUser user;
 
   @override
   Widget build(BuildContext context) {
-    final modules = HomeController().loadModules();
+    final modules = HomeController().loadModules(user.role);
 
     return FeatureScaffold(
       title: 'Ayeyo Delivery',
       subtitle:
-          'This home feature becomes the entry point for customers, riders, and admins depending on role.',
+          'Signed in as ${user.name} (${user.role.label}). Your dashboard is filtered by role.',
       children: [
-        const InfoCard(
-          title: 'Structure in practice',
+        InfoCard(
+          title: 'Account summary',
           description:
-              'Each feature owns its UI, use cases, business rules, and repositories so the codebase can grow without one giant folder.',
+              '${user.email} • ${user.role.label} access is active for this session.',
         ),
         ...modules.map(
           (module) => InfoCard(

@@ -18,49 +18,44 @@ class AuthRepository {
     return _auth.authStateChanges();
   }
 
+  Stream<AuthUser?> watchAuthUser() {
+    return _auth.authStateChanges().asyncExpand((firebaseUser) {
+      if (firebaseUser == null) {
+        return Stream<AuthUser?>.value(null);
+      }
+
+      final userRef =
+          _firestore.collection(FirestorePaths.users).doc(firebaseUser.uid);
+
+      return userRef.snapshots().asyncMap(
+        (doc) => _createOrLoadUserProfile(
+          firebaseUser,
+          document: doc,
+        ),
+      );
+    });
+  }
+
   Future<AuthUser> getCurrentUser() async {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser == null) {
       throw StateError('No signed-in Firebase user was found.');
     }
 
-    final userId = firebaseUser.uid;
-    final doc =
-        await _firestore.collection(FirestorePaths.users).doc(userId).get();
-
-    if (doc.exists) {
-      return AuthUser.fromFirestore(doc);
-    }
-
-    final fallbackUser = AuthUser(
-      id: userId,
-      name: firebaseUser.displayName ?? 'Guest Customer',
-      phone: firebaseUser.phoneNumber ?? '',
-      email: firebaseUser.email ?? 'anonymous@ayeyo.app',
-      role: 'customer',
-    );
-
-    await _firestore
+    final doc = await _firestore
         .collection(FirestorePaths.users)
-        .doc(userId)
-        .set(fallbackUser.toMap());
-    return fallbackUser;
+        .doc(firebaseUser.uid)
+        .get();
+
+    return _createOrLoadUserProfile(firebaseUser, document: doc);
   }
 
   Stream<AuthUser> watchCurrentUser() async* {
-    final firebaseUser = _auth.currentUser;
-    if (firebaseUser == null) {
-      throw StateError('No signed-in Firebase user was found.');
+    await for (final user in watchAuthUser()) {
+      if (user != null) {
+        yield user;
+      }
     }
-
-    final userId = firebaseUser.uid;
-    await getCurrentUser();
-
-    yield* _firestore
-        .collection(FirestorePaths.users)
-        .doc(userId)
-        .snapshots()
-        .map((doc) => AuthUser.fromFirestore(doc));
   }
 
   Future<AuthUser> signInWithEmailAndPassword({
@@ -95,7 +90,7 @@ class AuthRepository {
       name: name.trim().isEmpty ? 'Ayeyo Customer' : name.trim(),
       phone: user.phoneNumber ?? '',
       email: user.email ?? email,
-      role: 'customer',
+      role: AuthRole.customer,
     );
 
     await saveUser(authUser);
@@ -111,5 +106,31 @@ class AuthRepository {
         .collection(FirestorePaths.users)
         .doc(user.id)
         .set(user.toMap(), SetOptions(merge: true));
+  }
+
+  Future<AuthUser> _createOrLoadUserProfile(
+    User firebaseUser, {
+    DocumentSnapshot<Map<String, dynamic>>? document,
+  }) async {
+    final existingDocument = document ??
+        await _firestore
+            .collection(FirestorePaths.users)
+            .doc(firebaseUser.uid)
+            .get();
+
+    if (existingDocument.exists) {
+      return AuthUser.fromFirestore(existingDocument);
+    }
+
+    final fallbackUser = AuthUser(
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName ?? 'Ayeyo Customer',
+      phone: firebaseUser.phoneNumber ?? '',
+      email: firebaseUser.email ?? '',
+      role: AuthRole.customer,
+    );
+
+    await saveUser(fallbackUser);
+    return fallbackUser;
   }
 }

@@ -6,4 +6,6 @@ class AppRoutes {
   static const checkout = '/checkout';
   static const orders = '/orders';
   static const admin = '/admin';
+  static const counter = '/counter';
+  static const rider = '/rider';
 }

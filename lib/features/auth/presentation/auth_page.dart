@@ -82,8 +82,18 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) {
     return FeatureScaffold(
       title: 'Sign in',
-      subtitle: 'Use your email and password to access Ayeyo Delivery.',
+      subtitle:
+          'Use your email and password to access Ayeyo Delivery. New signups become customer accounts by default.',
       children: [
+        const Card(
+          child: ListTile(
+            contentPadding: EdgeInsets.all(20),
+            title: Text('Staff roles'),
+            subtitle: Text(
+              'Admin, counter, and rider access are assigned from Firestore under users/{uid}.',
+            ),
+          ),
+        ),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
