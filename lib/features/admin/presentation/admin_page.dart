@@ -244,6 +244,18 @@ class _DashboardHomePage extends StatelessWidget {
     return StreamBuilder<AdminDashboardState>(
       stream: controller.watchDashboard(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'The dashboard could not load right now: ${snapshot.error}',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
         final state = snapshot.data;
 
         if (snapshot.connectionState == ConnectionState.waiting &&

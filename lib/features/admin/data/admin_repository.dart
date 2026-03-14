@@ -17,6 +17,19 @@ class AdminRepository {
 
   final FirebaseFirestore _firestore;
 
+  static const BusinessSettings _defaultBusinessSettings = BusinessSettings(
+    businessName: 'Ayeyo Delivery',
+    phone: '+254700111222',
+    deliveryFee: 180,
+    taxRate: 0,
+    currency: 'KSh',
+    pickupEnabled: true,
+    orderingOpen: true,
+    openingHoursNote: 'Breakfast 9:00-11:00, lunch 12:00-15:00',
+    bannerMessage: 'Fresh meals for every session',
+    activeOffer: 'Free juice on lunch combo orders',
+  );
+
   Future<List<AdminMetric>> loadMetrics() async {
     final settings = await getBusinessSettings();
     return [
@@ -41,18 +54,7 @@ class AdminRepository {
       return BusinessSettings.fromFirestore(doc);
     }
 
-    return const BusinessSettings(
-      businessName: 'Ayeyo Delivery',
-      phone: '+254700111222',
-      deliveryFee: 180,
-      taxRate: 0,
-      currency: 'KSh',
-      pickupEnabled: true,
-      orderingOpen: true,
-      openingHoursNote: 'Breakfast 9:00-11:00, lunch 12:00-15:00',
-      bannerMessage: 'Fresh meals for every session',
-      activeOffer: 'Free juice on lunch combo orders',
-    );
+    return _defaultBusinessSettings;
   }
 
   Future<void> saveBusinessSettings(BusinessSettings settings) {
@@ -69,18 +71,7 @@ class AdminRepository {
         return BusinessSettings.fromFirestore(doc);
       }
 
-      return const BusinessSettings(
-        businessName: 'Ayeyo Delivery',
-        phone: '+254700111222',
-        deliveryFee: 180,
-        taxRate: 0,
-        currency: 'KSh',
-        pickupEnabled: true,
-        orderingOpen: true,
-        openingHoursNote: 'Breakfast 9:00-11:00, lunch 12:00-15:00',
-        bannerMessage: 'Fresh meals for every session',
-        activeOffer: 'Free juice on lunch combo orders',
-      );
+      return _defaultBusinessSettings;
     });
   }
 
@@ -136,18 +127,14 @@ class AdminRepository {
   Stream<AdminDashboardState> watchDashboard() {
     final controller = StreamController<AdminDashboardState>.broadcast();
 
-    BusinessSettings? settings;
+    var settings = _defaultBusinessSettings;
     List<MealSession> sessions = const [];
     List<MenuItem> items = const [];
-    QuerySnapshot<Map<String, dynamic>>? orderSnapshot;
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> orderDocs = const [];
 
     void emit() {
-      if (settings == null || orderSnapshot == null) {
-        return;
-      }
-
       final now = DateTime.now();
-      final todayOrdersCount = orderSnapshot!.docs.where((doc) {
+      final todayOrdersCount = orderDocs.where((doc) {
         final createdAt = (doc.data()['createdAt'] as Timestamp?)?.toDate();
         if (createdAt == null) {
           return false;
@@ -158,7 +145,7 @@ class AdminRepository {
             createdAt.day == now.day;
       }).length;
 
-      final pendingOrdersCount = orderSnapshot!.docs.where((doc) {
+      final pendingOrdersCount = orderDocs.where((doc) {
         return (doc.data()['status'] as String? ?? OrderStatuses.pending) ==
             OrderStatuses.pending;
       }).length;
@@ -174,11 +161,11 @@ class AdminRepository {
           pendingOrdersCount: pendingOrdersCount,
           activeMealSessionName: activeSession?.name ?? 'No active session',
           soldOutItemsCount: soldOutItemsCount,
-          businessName: settings!.businessName,
-          bannerMessage: settings!.bannerMessage,
-          activeOffer: settings!.activeOffer,
-          pickupEnabled: settings!.pickupEnabled,
-          orderingOpen: settings!.orderingOpen,
+          businessName: settings.businessName,
+          bannerMessage: settings.bannerMessage,
+          activeOffer: settings.activeOffer,
+          pickupEnabled: settings.pickupEnabled,
+          orderingOpen: settings.orderingOpen,
         ),
       );
     }
@@ -202,9 +189,11 @@ class AdminRepository {
         .collection(FirestorePaths.orders)
         .snapshots()
         .listen((value) {
-          orderSnapshot = value;
+          orderDocs = value.docs;
           emit();
         });
+
+    emit();
 
     controller.onCancel = () async {
       await settingsSub.cancel();
