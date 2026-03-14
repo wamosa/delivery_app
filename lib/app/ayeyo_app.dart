@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
+import '../features/admin/presentation/admin_login_page.dart';
 import '../features/admin/presentation/admin_page.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/domain/auth_user.dart';
@@ -45,39 +46,37 @@ class AyeyoApp extends StatelessWidget {
       ),
       routes: {
         AppRoutes.auth: (_) => const AuthPage(),
+        AppRoutes.adminLogin: (_) => const AdminLoginPage(),
         AppRoutes.menu: (_) => const RoleGate(
-              allowedRoles: [AuthRole.customer],
-              child: MenuPage(),
-            ),
+          allowedRoles: [AuthRole.customer],
+          child: MenuPage(),
+        ),
         AppRoutes.cart: (_) => const RoleGate(
-              allowedRoles: [AuthRole.customer],
-              child: CartPage(),
-            ),
+          allowedRoles: [AuthRole.customer],
+          child: CartPage(),
+        ),
         AppRoutes.checkout: (_) => const RoleGate(
-              allowedRoles: [AuthRole.customer],
-              child: CheckoutPage(),
-            ),
+          allowedRoles: [AuthRole.customer],
+          child: CheckoutPage(),
+        ),
         AppRoutes.orders: (_) => const RoleGate(
-              allowedRoles: [
-                AuthRole.customer,
-                AuthRole.admin,
-                AuthRole.counter,
-                AuthRole.rider,
-              ],
-              child: OrdersPage(),
-            ),
-        AppRoutes.admin: (_) => const RoleGate(
-              allowedRoles: [AuthRole.admin],
-              child: AdminPage(),
-            ),
+          allowedRoles: [
+            AuthRole.customer,
+            AuthRole.admin,
+            AuthRole.counter,
+            AuthRole.rider,
+          ],
+          child: OrdersPage(),
+        ),
+        AppRoutes.admin: (_) => const AdminPage(),
         AppRoutes.counter: (_) => const RoleGate(
-              allowedRoles: [AuthRole.admin, AuthRole.counter],
-              child: CounterPage(),
-            ),
+          allowedRoles: [AuthRole.admin, AuthRole.counter],
+          child: CounterPage(),
+        ),
         AppRoutes.rider: (_) => const RoleGate(
-              allowedRoles: [AuthRole.admin, AuthRole.rider],
-              child: RiderPage(),
-            ),
+          allowedRoles: [AuthRole.admin, AuthRole.rider],
+          child: RiderPage(),
+        ),
       },
     );
   }
