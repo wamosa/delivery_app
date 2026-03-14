@@ -1,3 +1,5 @@
+import '../../../core/data/business_settings_repository.dart';
+import '../../admin/domain/business_settings.dart';
 import '../data/menu_repository.dart';
 import '../domain/meal_session.dart';
 import '../domain/menu_item.dart';
@@ -5,9 +7,11 @@ import 'menu_screen_state.dart';
 
 class MenuController {
   MenuController({MenuRepository? repository})
-    : _repository = repository ?? MenuRepository();
+    : _repository = repository ?? MenuRepository(),
+      _businessSettingsRepository = BusinessSettingsRepository();
 
   final MenuRepository _repository;
+  final BusinessSettingsRepository _businessSettingsRepository;
 
   int _minutesOfDay(DateTime time) => (time.hour * 60) + time.minute;
 
@@ -49,6 +53,10 @@ class MenuController {
 
   Stream<List<MealSession>> watchMealSessions() {
     return _repository.watchMealSessions();
+  }
+
+  Stream<BusinessSettings> watchBusinessSettings() {
+    return _businessSettingsRepository.watchBusinessSettings();
   }
 
   MealSession? findActiveSession(List<MealSession> sessions, {DateTime? now}) {

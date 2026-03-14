@@ -1000,9 +1000,6 @@ Future<void> _showMenuItemEditor(
   final categoryController = TextEditingController(
     text: existing?.categoryName ?? 'General',
   );
-  final mealSessionIdController = TextEditingController(
-    text: existing?.mealSessionId ?? '',
-  );
   final imageUrlController = TextEditingController(
     text: existing?.imageUrl ?? '',
   );
@@ -1017,145 +1014,195 @@ Future<void> _showMenuItemEditor(
   );
   final formKey = GlobalKey<FormState>();
   var isAvailable = existing?.isAvailable ?? true;
+  String? selectedMealSessionId = existing?.mealSessionId;
 
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setSheetState) {
-          return Padding(
-            padding: EdgeInsets.only(
-              left: 20,
-              right: 20,
-              top: 20,
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            ),
-            child: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      existing == null ? 'Add menu item' : 'Edit menu item',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Item name'),
-                      validator: _requiredValidator,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: priceController,
-                      decoration: const InputDecoration(labelText: 'Price'),
-                      keyboardType: TextInputType.number,
-                      validator: _requiredValidator,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: categoryController,
-                      decoration: const InputDecoration(labelText: 'Category'),
-                      validator: _requiredValidator,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: mealSessionIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Meal session id',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: stockController,
-                      decoration: const InputDecoration(labelText: 'Stock'),
-                      keyboardType: TextInputType.number,
-                      validator: _requiredValidator,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: prepTimeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Prep time (minutes)',
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: _requiredValidator,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: imageUrlController,
-                      decoration: const InputDecoration(labelText: 'Image URL'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: localAssetController,
-                      decoration: const InputDecoration(
-                        labelText: 'Local asset path',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      value: isAvailable,
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Available'),
-                      onChanged: (value) {
-                        setSheetState(() {
-                          isAvailable = value;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () async {
-                        if (!formKey.currentState!.validate()) {
-                          return;
-                        }
+      return StreamBuilder<List<MealSession>>(
+        stream: controller.watchMealSessions(),
+        builder: (context, snapshot) {
+          final sessions = snapshot.data ?? const <MealSession>[];
+          final hasSelection = sessions.any(
+            (session) => session.id == selectedMealSessionId,
+          );
+          if (!hasSelection) {
+            selectedMealSessionId = sessions.isEmpty ? null : sessions.first.id;
+          }
 
-                        await controller.saveMenuItem(
-                          MenuItem(
-                            id: existing?.id ?? _newId('menu'),
-                            name: nameController.text.trim(),
-                            description: descriptionController.text.trim(),
-                            price:
-                                double.tryParse(priceController.text.trim()) ??
-                                0,
-                            imageUrl: imageUrlController.text.trim(),
-                            localImageAsset: localAssetController.text.trim(),
-                            categoryName: categoryController.text.trim(),
-                            mealSessionId: mealSessionIdController.text.trim(),
-                            isAvailable: isAvailable,
-                            stock:
-                                int.tryParse(stockController.text.trim()) ?? 0,
-                            prepTimeMinutes:
-                                int.tryParse(prepTimeController.text.trim()) ??
-                                0,
-                          ),
-                        );
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                        }
-                      },
-                      child: Text(
-                        existing == null ? 'Create item' : 'Save changes',
-                      ),
-                    ),
-                  ],
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 20,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 20,
                 ),
-              ),
-            ),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          existing == null ? 'Add menu item' : 'Edit menu item',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Item name',
+                          ),
+                          validator: _requiredValidator,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: descriptionController,
+                          decoration: const InputDecoration(
+                            labelText: 'Description',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: priceController,
+                          decoration: const InputDecoration(labelText: 'Price'),
+                          keyboardType: TextInputType.number,
+                          validator: _requiredValidator,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: categoryController,
+                          decoration: const InputDecoration(
+                            labelText: 'Category',
+                          ),
+                          validator: _requiredValidator,
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedMealSessionId,
+                          items: sessions
+                              .map(
+                                (session) => DropdownMenuItem<String>(
+                                  value: session.id,
+                                  child: Text(session.name),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: sessions.isEmpty
+                              ? null
+                              : (value) {
+                                  setSheetState(() {
+                                    selectedMealSessionId = value;
+                                  });
+                                },
+                          decoration: const InputDecoration(
+                            labelText: 'Meal session',
+                          ),
+                          validator: (_) {
+                            if (sessions.isEmpty) {
+                              return 'Create a meal session first.';
+                            }
+                            if (selectedMealSessionId == null ||
+                                selectedMealSessionId!.isEmpty) {
+                              return 'Select a meal session.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: stockController,
+                          decoration: const InputDecoration(labelText: 'Stock'),
+                          keyboardType: TextInputType.number,
+                          validator: _requiredValidator,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: prepTimeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Prep time (minutes)',
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: _requiredValidator,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: imageUrlController,
+                          decoration: const InputDecoration(
+                            labelText: 'Image URL',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: localAssetController,
+                          decoration: const InputDecoration(
+                            labelText: 'Local asset path',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        SwitchListTile(
+                          value: isAvailable,
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Available'),
+                          onChanged: (value) {
+                            setSheetState(() {
+                              isAvailable = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () async {
+                            if (!formKey.currentState!.validate()) {
+                              return;
+                            }
+
+                            await controller.saveMenuItem(
+                              MenuItem(
+                                id: existing?.id ?? _newId('menu'),
+                                name: nameController.text.trim(),
+                                description: descriptionController.text.trim(),
+                                price:
+                                    double.tryParse(
+                                      priceController.text.trim(),
+                                    ) ??
+                                    0,
+                                imageUrl: imageUrlController.text.trim(),
+                                localImageAsset: localAssetController.text
+                                    .trim(),
+                                categoryName: categoryController.text.trim(),
+                                mealSessionId: selectedMealSessionId ?? '',
+                                isAvailable: isAvailable,
+                                stock:
+                                    int.tryParse(stockController.text.trim()) ??
+                                    0,
+                                prepTimeMinutes:
+                                    int.tryParse(
+                                      prepTimeController.text.trim(),
+                                    ) ??
+                                    0,
+                              ),
+                            );
+
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
+                          child: Text(
+                            existing == null ? 'Create item' : 'Save changes',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           );
         },
       );

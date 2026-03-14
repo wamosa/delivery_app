@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../auth/application/auth_controller.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -159,6 +160,17 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                               ? 'Signing in...'
                               : 'Enter admin dashboard',
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _isSubmitting
+                            ? null
+                            : () => Navigator.pushReplacementNamed(
+                                context,
+                                AppRoutes.auth,
+                              ),
+                        icon: const Icon(Icons.person_rounded),
+                        label: const Text('Customer login'),
                       ),
                     ],
                   ),

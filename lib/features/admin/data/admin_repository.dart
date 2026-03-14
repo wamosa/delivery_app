@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../../../core/data/business_settings_repository.dart';
 import '../../../core/firebase/firestore_paths.dart';
 import '../../menu/domain/meal_session.dart';
 import '../../menu/domain/menu_item.dart';
@@ -16,19 +17,8 @@ class AdminRepository {
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
   final FirebaseFirestore _firestore;
-
-  static const BusinessSettings _defaultBusinessSettings = BusinessSettings(
-    businessName: 'Ayeyo Delivery',
-    phone: '+254700111222',
-    deliveryFee: 180,
-    taxRate: 0,
-    currency: 'KSh',
-    pickupEnabled: true,
-    orderingOpen: true,
-    openingHoursNote: 'Breakfast 9:00-11:00, lunch 12:00-15:00',
-    bannerMessage: 'Fresh meals for every session',
-    activeOffer: 'Free juice on lunch combo orders',
-  );
+  static const BusinessSettings _defaultBusinessSettings =
+      BusinessSettingsRepository.defaultSettings;
 
   Future<List<AdminMetric>> loadMetrics() async {
     final settings = await getBusinessSettings();

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../application/auth_controller.dart';
 
@@ -85,6 +86,41 @@ class _AuthPageState extends State<AuthPage> {
       subtitle:
           'Use your email and password to access Ayeyo Delivery. New signups become customer accounts by default.',
       children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Choose your login',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                FilledButton.icon(
+                  onPressed: () {
+                    setState(() {
+                      _isRegisterMode = false;
+                      _errorMessage = null;
+                    });
+                  },
+                  icon: const Icon(Icons.person_rounded),
+                  label: const Text('Customer login'),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      Navigator.pushNamed(context, AppRoutes.adminLogin),
+                  icon: const Icon(Icons.admin_panel_settings_rounded),
+                  label: const Text('Admin login'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         const Card(
           child: ListTile(
             contentPadding: EdgeInsets.all(20),
@@ -105,9 +141,7 @@ class _AuthPageState extends State<AuthPage> {
                   if (_isRegisterMode) ...[
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Full name',
-                      ),
+                      decoration: const InputDecoration(labelText: 'Full name'),
                       textInputAction: TextInputAction.next,
                       validator: (value) {
                         if (!_isRegisterMode) {
@@ -141,9 +175,7 @@ class _AuthPageState extends State<AuthPage> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Password',
-                    ),
+                    decoration: const InputDecoration(labelText: 'Password'),
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     onFieldSubmitted: (_) => _submit(),
@@ -173,8 +205,8 @@ class _AuthPageState extends State<AuthPage> {
                       _isSubmitting
                           ? 'Please wait...'
                           : _isRegisterMode
-                              ? 'Create account'
-                              : 'Sign in',
+                          ? 'Create account'
+                          : 'Sign in',
                     ),
                   ),
                   const SizedBox(height: 12),
