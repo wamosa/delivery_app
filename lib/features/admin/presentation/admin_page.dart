@@ -97,6 +97,16 @@ class _AdminShellState extends State<_AdminShell> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(_destinations[_selectedIndex].label),
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: _authController.signOut,
+            icon: const Icon(Icons.logout_rounded),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: isWide
             ? Row(

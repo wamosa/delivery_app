@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../admin/presentation/admin_page.dart';
+import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
@@ -43,8 +44,19 @@ class _AdminHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authController = AuthController();
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin')),
+      appBar: AppBar(
+        title: const Text('Admin'),
+        actions: [
+          IconButton(
+            tooltip: 'Logout',
+            onPressed: authController.signOut,
+            icon: const Icon(Icons.logout_rounded),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
         children: [

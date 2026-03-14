@@ -486,60 +486,74 @@ class _MenuPageState extends State<MenuPage> {
                     builder: (context, snapshot) {
                       final user = snapshot.data;
 
-                      return PopupMenuButton<String>(
-                        tooltip: user == null ? 'Sign in' : 'Account',
-                        onSelected: _handleAccountSelection,
-                        itemBuilder: (context) {
-                          if (user == null) {
-                            return const [
-                              PopupMenuItem<String>(
-                                value: 'sign_in',
-                                child: Text('Sign in'),
-                              ),
-                            ];
-                          }
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (user != null)
+                            IconButton(
+                              tooltip: 'Logout',
+                              onPressed: _authController.signOut,
+                              icon: const Icon(Icons.logout_rounded),
+                            ),
+                          PopupMenuButton<String>(
+                            tooltip: user == null ? 'Sign in' : 'Account',
+                            onSelected: _handleAccountSelection,
+                            itemBuilder: (context) {
+                              if (user == null) {
+                                return const [
+                                  PopupMenuItem<String>(
+                                    value: 'sign_in',
+                                    child: Text('Sign in'),
+                                  ),
+                                ];
+                              }
 
-                          return [
-                            PopupMenuItem<String>(
-                              enabled: false,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    user.name,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleSmall,
+                              return [
+                                PopupMenuItem<String>(
+                                  enabled: false,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleSmall,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        user.email,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    user.email,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall,
-                                  ),
-                                ],
+                                ),
+                                const PopupMenuDivider(),
+                                const PopupMenuItem<String>(
+                                  value: 'sign_out',
+                                  child: Text('Sign out'),
+                                ),
+                              ];
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
                               ),
-                            ),
-                            const PopupMenuDivider(),
-                            const PopupMenuItem<String>(
-                              value: 'sign_out',
-                              child: Text('Sign out'),
-                            ),
-                          ];
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: CircleAvatar(
-                            backgroundColor: const Color(0xFFFFE5F0),
-                            child: Icon(
-                              user == null
-                                  ? Icons.login_rounded
-                                  : Icons.person_rounded,
-                              color: const Color(0xFFE91E63),
+                              child: CircleAvatar(
+                                backgroundColor: const Color(0xFFFFE5F0),
+                                child: Icon(
+                                  user == null
+                                      ? Icons.login_rounded
+                                      : Icons.person_rounded,
+                                  color: const Color(0xFFE91E63),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       );
                     },
                   ),
