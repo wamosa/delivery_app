@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/firebase/firestore_paths.dart';
-import '../../../services/notification_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../domain/auth_user.dart';
 
 class AuthRepository {
@@ -31,9 +31,23 @@ class AuthRepository {
           .collection(FirestorePaths.users)
           .doc(firebaseUser.uid);
 
-      return userRef.snapshots().asyncMap(
-        (doc) => _createOrLoadUserProfile(firebaseUser, document: doc),
-      );
+      return userRef.snapshots().asyncMap((doc) async {
+        final firestoreRole = doc.data()?['role'] as String?;
+        var role = await _loadRoleFromClaims(firebaseUser);
+
+        if (firestoreRole != null && firestoreRole.isNotEmpty) {
+          final roleKey = role.key;
+          if (roleKey != firestoreRole) {
+            role = await _loadRoleFromClaims(firebaseUser, forceRefresh: true);
+          }
+        }
+
+        return _createOrLoadUserProfile(
+          firebaseUser,
+          document: doc,
+          roleOverride: role,
+        );
+      });
     });
   }
 
@@ -50,7 +64,13 @@ class AuthRepository {
         .doc(firebaseUser.uid)
         .get();
 
-    return _createOrLoadUserProfile(firebaseUser, document: doc);
+    final role = await _loadRoleFromClaims(firebaseUser);
+
+    return _createOrLoadUserProfile(
+      firebaseUser,
+      document: doc,
+      roleOverride: role,
+    );
   }
 
   Stream<AuthUser> watchCurrentUser() async* {
@@ -117,6 +137,7 @@ class AuthRepository {
   Future<AuthUser> _createOrLoadUserProfile(
     User firebaseUser, {
     DocumentSnapshot<Map<String, dynamic>>? document,
+    AuthRole? roleOverride,
   }) async {
     final existingDocument =
         document ??
@@ -126,7 +147,10 @@ class AuthRepository {
             .get();
 
     if (existingDocument.exists) {
-      return AuthUser.fromFirestore(existingDocument);
+      return AuthUser.fromFirestore(
+        existingDocument,
+        roleOverride: roleOverride,
+      );
     }
 
     final fallbackUser = AuthUser(
@@ -134,10 +158,26 @@ class AuthRepository {
       name: firebaseUser.displayName ?? 'Ayeyo Customer',
       phone: firebaseUser.phoneNumber ?? '',
       email: firebaseUser.email ?? '',
-      role: AuthRole.customer,
+      role: roleOverride ?? AuthRole.customer,
     );
 
     await saveUser(fallbackUser);
     return fallbackUser;
+  }
+
+  Future<AuthRole> _loadRoleFromClaims(
+    User firebaseUser, {
+    bool forceRefresh = false,
+  }) async {
+    final token = await firebaseUser.getIdTokenResult(forceRefresh);
+    final claims = token.claims ?? <String, dynamic>{};
+    final roleKey = claims['role'] as String?;
+    if (roleKey != null && roleKey.isNotEmpty) {
+      return authRoleFromKey(roleKey);
+    }
+    if (claims['admin'] == true) {
+      return AuthRole.admin;
+    }
+    return AuthRole.customer;
   }
 }

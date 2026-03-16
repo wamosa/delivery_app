@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../core/di/service_locator.dart';
 import '../../auth/application/auth_controller.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -12,7 +13,7 @@ class AdminLoginPage extends StatefulWidget {
 }
 
 class _AdminLoginPageState extends State<AdminLoginPage> {
-  final _controller = AuthController();
+  final _controller = getIt<AuthController>();
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();

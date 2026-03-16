@@ -62,7 +62,7 @@ function ensureSessionOpen(session) {
   }
 }
 
-exports.placeOrder = onCall(async (request) => {
+exports.placeOrder = onCall({ enforceAppCheck: true }, async (request) => {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "You must be signed in to place an order.");
   }
@@ -92,6 +92,16 @@ exports.placeOrder = onCall(async (request) => {
 
     const settings = settingsSnap.data();
     const deliveryFee = Number(settings.deliveryFee || 0);
+    const orderingOpen = settings.orderingOpen !== false;
+    const pickupEnabled = settings.pickupEnabled !== false;
+
+    if (!orderingOpen) {
+      throw new HttpsError("failed-precondition", "Ordering is currently closed.");
+    }
+
+    if (deliveryType === "pickup" && !pickupEnabled) {
+      throw new HttpsError("failed-precondition", "Pickup orders are currently disabled.");
+    }
 
     const menuRefs = itemsInput.map((item) => db.collection("menu_items").doc(item.itemId));
     const menuSnaps = await Promise.all(menuRefs.map((ref) => transaction.get(ref)));
@@ -172,7 +182,7 @@ exports.placeOrder = onCall(async (request) => {
   return result;
 });
 
-exports.setUserRole = onCall(async (request) => {
+exports.setUserRole = onCall({ enforceAppCheck: true }, async (request) => {
   if (!request.auth?.token?.admin) {
     throw new HttpsError("permission-denied", "Only admins can assign roles.");
   }

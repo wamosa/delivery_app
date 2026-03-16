@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
+import '../../../core/di/service_locator.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
 import '../../menu/domain/meal_session.dart';
@@ -20,7 +21,7 @@ class AdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = AuthController();
+    final authController = getIt<AuthController>();
 
     return StreamBuilder<AuthUser?>(
       stream: authController.watchAuthUser(),
@@ -48,7 +49,7 @@ class AdminPage extends StatelessWidget {
                   leading: const Icon(Icons.lock_outline_rounded),
                   title: const Text('You are signed in without admin rights'),
                   subtitle: Text(
-                    'Signed in as ${user.email}. Ask an existing admin to set your role to admin in Firestore.',
+                    'Signed in as ${user.email}. Ask an existing admin to grant admin access and then sign out and back in to refresh your role.',
                   ),
                 ),
               ),
@@ -81,7 +82,7 @@ class _AdminShell extends StatefulWidget {
 }
 
 class _AdminShellState extends State<_AdminShell> {
-  final _authController = AuthController();
+  final _authController = getIt<AuthController>();
 
   late int _selectedIndex;
 
@@ -200,7 +201,7 @@ class _AdminShellState extends State<_AdminShell> {
   }
 
   Widget _buildPage() {
-    final controller = AdminController();
+    final controller = getIt<AdminController>();
 
     switch (_selectedIndex) {
       case 0:

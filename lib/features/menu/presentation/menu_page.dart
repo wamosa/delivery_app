@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/app_routes.dart';
-import '../../../core/data/business_settings_repository.dart';
-import '../../../services/notification_service.dart';
+import '../../../core/di/service_locator.dart';
+import '../../../core/services/notification_service.dart';
 import '../../admin/domain/business_settings.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
@@ -21,10 +21,11 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   final menu_feature.MenuController _menuController =
-      menu_feature.MenuController();
-  final AuthController _authController = AuthController();
-  final CartController _cartController = CartController();
-  final NotificationService _notificationService = NotificationService.instance;
+      getIt<menu_feature.MenuController>();
+  final AuthController _authController = getIt<AuthController>();
+  final CartController _cartController = getIt<CartController>();
+  final NotificationService _notificationService =
+      getIt<NotificationService>();
   final Set<String> _favoriteItemIds = <String>{};
   String _searchQuery = '';
   String _selectedCategory = 'All Food';

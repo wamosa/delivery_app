@@ -64,14 +64,17 @@ class AuthUser {
   final String email;
   final AuthRole role;
 
-  factory AuthUser.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+  factory AuthUser.fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc, {
+    AuthRole? roleOverride,
+  }) {
     final data = doc.data() ?? <String, dynamic>{};
     return AuthUser(
       id: doc.id,
       name: data['name'] as String? ?? '',
       phone: data['phone'] as String? ?? '',
       email: data['email'] as String? ?? '',
-      role: authRoleFromKey(data['role'] as String?),
+      role: roleOverride ?? authRoleFromKey(data['role'] as String?),
     );
   }
 

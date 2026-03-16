@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/orders_controller.dart';
@@ -10,7 +11,7 @@ class OrdersPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = OrdersController();
+    final controller = getIt<OrdersController>();
 
     return FutureBuilder<List<OrderSummary>>(
       future: controller.loadOrders(),

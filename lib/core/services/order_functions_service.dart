@@ -1,7 +1,7 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
-import '../features/checkout/domain/place_order_request.dart';
-import '../features/checkout/domain/place_order_result.dart';
+import '../../features/checkout/domain/place_order_request.dart';
+import '../../features/checkout/domain/place_order_result.dart';
 
 class OrderFunctionsService {
   OrderFunctionsService({FirebaseFunctions? functions})

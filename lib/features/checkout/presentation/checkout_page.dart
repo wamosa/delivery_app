@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/checkout_controller.dart';
@@ -14,7 +15,7 @@ class CheckoutPage extends StatefulWidget {
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  final CheckoutController _controller = CheckoutController();
+  final CheckoutController _controller = getIt<CheckoutController>();
   bool _isSubmitting = false;
   String? _message;
 

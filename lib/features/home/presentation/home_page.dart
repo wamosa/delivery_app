@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
+import '../../../core/di/service_locator.dart';
 import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
@@ -19,7 +20,7 @@ class HomePage extends StatelessWidget {
       return const _AdminHomePage();
     }
 
-    final modules = HomeController().loadModules(user.role);
+    final modules = getIt<HomeController>().loadModules(user.role);
 
     return FeatureScaffold(
       title: 'Ayeyo Delivery',
@@ -45,7 +46,7 @@ class _AdminHomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = AuthController();
+    final authController = getIt<AuthController>();
     final media = MediaQuery.of(context);
     final width = media.size.width;
     final horizontalPadding = width < 360

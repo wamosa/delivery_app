@@ -6,9 +6,12 @@ import '../domain/menu_item.dart';
 import 'menu_screen_state.dart';
 
 class MenuController {
-  MenuController({MenuRepository? repository})
-    : _repository = repository ?? MenuRepository(),
-      _businessSettingsRepository = BusinessSettingsRepository();
+  MenuController({
+    MenuRepository? repository,
+    BusinessSettingsRepository? businessSettingsRepository,
+  })  : _repository = repository ?? MenuRepository(),
+        _businessSettingsRepository =
+            businessSettingsRepository ?? BusinessSettingsRepository();
 
   final MenuRepository _repository;
   final BusinessSettingsRepository _businessSettingsRepository;

@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app/ayeyo_app.dart';
-import 'services/app_bootstrap.dart';
+import 'core/services/app_bootstrap.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,10 +27,14 @@ class _AppStartup extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
+          final errorDetails = snapshot.error?.toString() ?? 'Unknown error';
+          final message = kDebugMode
+              ? 'Startup failed: $errorDetails'
+              : 'We could not start the app. Please check your connection and try again.';
           return MaterialApp(
             home: _StartupStatusScreen(
               title: 'Startup failed',
-              message: snapshot.error.toString(),
+              message: message,
             ),
           );
         }

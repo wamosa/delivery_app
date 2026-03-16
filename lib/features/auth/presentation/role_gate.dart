@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/feature_scaffold.dart';
+import '../../../core/di/service_locator.dart';
 import '../application/auth_controller.dart';
 import '../domain/auth_user.dart';
 import 'auth_page.dart';
@@ -17,7 +18,7 @@ class RoleGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = AuthController();
+    final controller = getIt<AuthController>();
 
     return StreamBuilder<AuthUser?>(
       stream: controller.watchAuthUser(),

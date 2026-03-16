@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/cart_controller.dart';
@@ -9,7 +10,7 @@ class CartPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final summary = CartController().loadSummary();
+    final summary = getIt<CartController>().loadSummary();
 
     return FeatureScaffold(
       title: 'Cart',

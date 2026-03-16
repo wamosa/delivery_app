@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/di/service_locator.dart';
 import '../features/admin/presentation/admin_page.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/domain/auth_user.dart';
@@ -20,7 +21,7 @@ class AyeyoApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = AuthController();
+    final authController = getIt<AuthController>();
 
     return MaterialApp(
       title: 'Ayeyo Delivery',
