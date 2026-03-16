@@ -1094,7 +1094,8 @@ Future<void> _showMenuItemEditor(
                         ),
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
-                          initialValue: selectedMealSessionId,
+                          value: selectedMealSessionId,
+                          hint: const Text('Select a meal session'),
                           items: sessions
                               .map(
                                 (session) => DropdownMenuItem<String>(
