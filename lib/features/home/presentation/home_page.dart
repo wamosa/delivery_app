@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
+import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../application/home_controller.dart';
@@ -45,6 +46,14 @@ class _AdminHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authController = AuthController();
+    final media = MediaQuery.of(context);
+    final width = media.size.width;
+    final horizontalPadding = width < 360
+        ? 16.0
+        : width < Breakpoints.compact
+        ? 20.0
+        : 32.0;
+    final maxContentWidth = width < Breakpoints.wide ? double.infinity : 720.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,37 +66,52 @@ class _AdminHomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-        children: [
-          _AdminHomeCard(
-            title: 'Admin tools',
-            description:
-                'Open the main admin dashboard to manage menu items, meal sessions, settings, and business activity.',
-            icon: Icons.dashboard_customize_rounded,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AdminPage(initialIndex: 0),
-                ),
-              );
-            },
+      body: SafeArea(
+        child: ListView(
+          padding: EdgeInsets.symmetric(
+            horizontal: horizontalPadding,
+            vertical: 20,
           ),
-          const SizedBox(height: 16),
-          _AdminHomeCard(
-            title: 'Order operations',
-            description:
-                'Jump straight into the admin orders workspace to review and update incoming orders.',
-            icon: Icons.receipt_long_rounded,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AdminPage(initialIndex: 1),
+          children: [
+            Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxContentWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _AdminHomeCard(
+                      title: 'Admin tools',
+                      description:
+                          'Open the main admin dashboard to manage menu items, meal sessions, settings, and business activity.',
+                      icon: Icons.dashboard_customize_rounded,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AdminPage(initialIndex: 0),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _AdminHomeCard(
+                      title: 'Order operations',
+                      description:
+                          'Jump straight into the admin orders workspace to review and update incoming orders.',
+                      icon: Icons.receipt_long_rounded,
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const AdminPage(initialIndex: 1),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-        ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

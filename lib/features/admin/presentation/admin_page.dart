@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
@@ -10,7 +11,7 @@ import '../../orders/domain/order_summary.dart';
 import '../application/admin_controller.dart';
 import '../domain/admin_dashboard_state.dart';
 import '../domain/business_settings.dart';
-import 'admin_login_page.dart';
+import '../../auth/presentation/auth_page.dart';
 
 class AdminPage extends StatelessWidget {
   const AdminPage({this.initialIndex = 0, super.key});
@@ -32,7 +33,7 @@ class AdminPage extends StatelessWidget {
 
         final user = snapshot.data;
         if (user == null) {
-          return const AdminLoginPage();
+          return const AuthPage();
         }
 
         if (user.role != AuthRole.admin) {
@@ -92,7 +93,7 @@ class _AdminShellState extends State<_AdminShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 900;
+    final isWide = Breakpoints.isWide(context);
     final page = _buildPage();
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -279,8 +280,7 @@ class _DashboardHomePage extends StatelessWidget {
           );
         }
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        return _AdminList(
           children: [
             _HeaderCard(
               eyebrow: 'Admin dashboard',
@@ -404,8 +404,7 @@ class _OrdersAdminPage extends StatelessWidget {
       builder: (context, snapshot) {
         final orders = snapshot.data ?? const <OrderSummary>[];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        return _AdminList(
           children: [
             const _SimplePageHeader(
               title: 'Orders',
@@ -461,8 +460,7 @@ class _MenuItemsAdminPage extends StatelessWidget {
       builder: (context, snapshot) {
         final items = snapshot.data ?? const <MenuItem>[];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        return _AdminList(
           children: [
             _SimplePageHeader(
               title: 'Menu items',
@@ -533,8 +531,7 @@ class _MealSessionsAdminPage extends StatelessWidget {
       builder: (context, snapshot) {
         final sessions = snapshot.data ?? const <MealSession>[];
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        return _AdminList(
           children: [
             _SimplePageHeader(
               title: 'Meal sessions',
@@ -606,8 +603,7 @@ class _SettingsAdminPage extends StatelessWidget {
       builder: (context, snapshot) {
         final settings = snapshot.data;
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        return _AdminList(
           children: [
             _SimplePageHeader(
               title: 'Settings',
@@ -866,6 +862,42 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
+class _AdminList extends StatelessWidget {
+  const _AdminList({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final width = media.size.width;
+    final horizontalPadding = width < 360
+        ? 16.0
+        : width < Breakpoints.compact
+        ? 20.0
+        : 32.0;
+    final maxContentWidth = width < Breakpoints.wide ? double.infinity : 720.0;
+
+    return ListView(
+      padding: EdgeInsets.symmetric(
+        horizontal: horizontalPadding,
+        vertical: 20,
+      ),
+      children: [
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: children,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _StatusRow extends StatelessWidget {
   const _StatusRow({required this.label, required this.value});
 
@@ -875,6 +907,28 @@ class _StatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isCompact = Breakpoints.isCompact(context);
+
+    if (isCompact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.textTheme.bodyMedium?.color,
+            ),
+          ),
+        ],
+      );
+    }
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -916,23 +970,27 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isCompact = Breakpoints.isCompact(context);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        decoration: BoxDecoration(
-          color: colorScheme.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: colorScheme.primary),
-            const SizedBox(width: 10),
-            Text(label),
-          ],
+    return SizedBox(
+      width: isCompact ? double.infinity : null,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Ink(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: isCompact ? MainAxisSize.max : MainAxisSize.min,
+            children: [
+              Icon(icon, color: colorScheme.primary),
+              const SizedBox(width: 10),
+              Text(label),
+            ],
+          ),
         ),
       ),
     );
@@ -1093,6 +1151,21 @@ Future<void> _showMenuItemEditor(
                           validator: _requiredValidator,
                         ),
                         const SizedBox(height: 12),
+                        if (snapshot.hasError) ...[
+                          Text(
+                            'Unable to load meal sessions. Check Firestore rules and admin claims.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ] else if (sessions.isEmpty) ...[
+                          const Text(
+                            'No meal sessions yet. Add one in the Meal sessions tab.',
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         DropdownButtonFormField<String>(
                           value: selectedMealSessionId,
                           hint: const Text('Select a meal session'),
@@ -1104,7 +1177,7 @@ Future<void> _showMenuItemEditor(
                                 ),
                               )
                               .toList(),
-                          onChanged: sessions.isEmpty
+                          onChanged: sessions.isEmpty || snapshot.hasError
                               ? null
                               : (value) {
                                   setSheetState(() {
@@ -1173,32 +1246,48 @@ Future<void> _showMenuItemEditor(
                               return;
                             }
 
-                            await controller.saveMenuItem(
-                              MenuItem(
-                                id: existing?.id ?? _newId('menu'),
-                                name: nameController.text.trim(),
-                                description: descriptionController.text.trim(),
-                                price:
-                                    double.tryParse(
-                                      priceController.text.trim(),
-                                    ) ??
-                                    0,
-                                imageUrl: imageUrlController.text.trim(),
-                                localImageAsset: localAssetController.text
-                                    .trim(),
-                                categoryName: categoryController.text.trim(),
-                                mealSessionId: selectedMealSessionId ?? '',
-                                isAvailable: isAvailable,
-                                stock:
-                                    int.tryParse(stockController.text.trim()) ??
-                                    0,
-                                prepTimeMinutes:
-                                    int.tryParse(
-                                      prepTimeController.text.trim(),
-                                    ) ??
-                                    0,
-                              ),
-                            );
+                            try {
+                              await controller.saveMenuItem(
+                                MenuItem(
+                                  id: existing?.id ?? _newId('menu'),
+                                  name: nameController.text.trim(),
+                                  description: descriptionController.text
+                                      .trim(),
+                                  price:
+                                      double.tryParse(
+                                        priceController.text.trim(),
+                                      ) ??
+                                      0,
+                                  imageUrl: imageUrlController.text.trim(),
+                                  localImageAsset: localAssetController.text
+                                      .trim(),
+                                  categoryName: categoryController.text.trim(),
+                                  mealSessionId: selectedMealSessionId ?? '',
+                                  isAvailable: isAvailable,
+                                  stock:
+                                      int.tryParse(
+                                        stockController.text.trim(),
+                                      ) ??
+                                      0,
+                                  prepTimeMinutes:
+                                      int.tryParse(
+                                        prepTimeController.text.trim(),
+                                      ) ??
+                                      0,
+                                ),
+                              );
+                            } catch (error) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Failed to save menu item: $error',
+                                    ),
+                                  ),
+                                );
+                              }
+                              return;
+                            }
 
                             if (context.mounted) {
                               Navigator.pop(context);
@@ -1330,27 +1419,46 @@ Future<void> _showMealSessionEditor(
                           return;
                         }
 
-                        await controller.saveMealSession(
-                          MealSession(
-                            id: existing?.id ?? _newId('session'),
-                            name: nameController.text.trim(),
-                            startHour:
-                                int.tryParse(startHourController.text.trim()) ??
-                                0,
-                            startMinute:
-                                int.tryParse(
-                                  startMinuteController.text.trim(),
-                                ) ??
-                                0,
-                            endHour:
-                                int.tryParse(endHourController.text.trim()) ??
-                                0,
-                            endMinute:
-                                int.tryParse(endMinuteController.text.trim()) ??
-                                0,
-                            isActive: isActive,
-                          ),
-                        );
+                        try {
+                          await controller.saveMealSession(
+                            MealSession(
+                              id: existing?.id ?? _newId('session'),
+                              name: nameController.text.trim(),
+                              startHour:
+                                  int.tryParse(
+                                    startHourController.text.trim(),
+                                  ) ??
+                                  0,
+                              startMinute:
+                                  int.tryParse(
+                                    startMinuteController.text.trim(),
+                                  ) ??
+                                  0,
+                              endHour:
+                                  int.tryParse(
+                                    endHourController.text.trim(),
+                                  ) ??
+                                  0,
+                              endMinute:
+                                  int.tryParse(
+                                    endMinuteController.text.trim(),
+                                  ) ??
+                                  0,
+                              isActive: isActive,
+                            ),
+                          );
+                        } catch (error) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Failed to save meal session: $error',
+                                ),
+                              ),
+                            );
+                          }
+                          return;
+                        }
 
                         if (context.mounted) {
                           Navigator.pop(context);

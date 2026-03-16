@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_theme.dart';
-import '../features/admin/presentation/admin_login_page.dart';
 import '../features/admin/presentation/admin_page.dart';
 import '../features/auth/application/auth_controller.dart';
 import '../features/auth/domain/auth_user.dart';
@@ -46,7 +45,7 @@ class AyeyoApp extends StatelessWidget {
       ),
       routes: {
         AppRoutes.auth: (_) => const AuthPage(),
-        AppRoutes.adminLogin: (_) => const AdminLoginPage(),
+        AppRoutes.adminLogin: (_) => const AuthPage(),
         AppRoutes.menu: (_) => const RoleGate(
           allowedRoles: [AuthRole.customer],
           child: MenuPage(),

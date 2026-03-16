@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../../../app/app_routes.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../application/auth_controller.dart';
 
@@ -83,53 +82,8 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) {
     return FeatureScaffold(
       title: 'Sign in',
-      subtitle:
-          'Use your email and password to access Ayeyo Delivery. New signups become customer accounts by default.',
+      subtitle: '',
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Choose your login',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                FilledButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isRegisterMode = false;
-                      _errorMessage = null;
-                    });
-                  },
-                  icon: const Icon(Icons.person_rounded),
-                  label: const Text('Customer login'),
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () =>
-                      Navigator.pushNamed(context, AppRoutes.adminLogin),
-                  icon: const Icon(Icons.admin_panel_settings_rounded),
-                  label: const Text('Admin login'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Card(
-          child: ListTile(
-            contentPadding: EdgeInsets.all(20),
-            title: Text('Staff roles'),
-            subtitle: Text(
-              'Admin, counter, and rider access are assigned from Firestore under users/{uid}.',
-            ),
-          ),
-        ),
         Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
