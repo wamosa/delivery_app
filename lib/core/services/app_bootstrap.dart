@@ -35,6 +35,10 @@ class AppBootstrap {
   }
 
   static Future<void> _configureCrashlytics() async {
+    if (kIsWeb) {
+      return;
+    }
+
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
       !kDebugMode,
     );
