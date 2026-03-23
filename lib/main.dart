@@ -19,9 +19,10 @@ class _AppStartup extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const MaterialApp(
+            debugShowCheckedModeBanner: false,
             home: _StartupStatusScreen(
               title: 'Starting Ayeyo',
-              message: 'Initializing Firebase and signing you in...',
+              message: 'please wait while we prepare everything for you...',
             ),
           );
         }

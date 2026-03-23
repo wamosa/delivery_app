@@ -81,99 +81,109 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final cardMaxWidth = width < 520 ? double.infinity : 440.0;
+
     return FeatureScaffold(
       title: 'Sign in',
       subtitle: '',
+      showAppBar: false,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (_isRegisterMode) ...[
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Full name'),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (!_isRegisterMode) {
+        Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: cardMaxWidth),
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_isRegisterMode) ...[
+                        TextFormField(
+                          controller: _nameController,
+                          decoration:
+                              const InputDecoration(labelText: 'Full name'),
+                          textInputAction: TextInputAction.next,
+                          validator: (value) {
+                            if (!_isRegisterMode) {
+                              return null;
+                            }
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Enter your name.';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Email address',
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Enter your email address.';
+                          }
+                          if (!value.contains('@')) {
+                            return 'Enter a valid email address.';
+                          }
                           return null;
-                        }
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter your name.';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Email address',
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Enter your email address.';
-                      }
-                      if (!value.contains('@')) {
-                        return 'Enter a valid email address.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(labelText: 'Password'),
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    onFieldSubmitted: (_) => _submit(),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Enter your password.';
-                      }
-                      if (_isRegisterMode && value.length < 6) {
-                        return 'Use at least 6 characters.';
-                      }
-                      return null;
-                    },
-                  ),
-                  if (_errorMessage != null) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      _errorMessage!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                        },
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  FilledButton(
-                    onPressed: _isSubmitting ? null : _submit,
-                    child: Text(
-                      _isSubmitting
-                          ? 'Please wait...'
-                          : _isRegisterMode
-                          ? 'Create account'
-                          : 'Sign in',
-                    ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(labelText: 'Password'),
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _submit(),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Enter your password.';
+                          }
+                          if (_isRegisterMode && value.length < 6) {
+                            return 'Use at least 6 characters.';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      FilledButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        child: Text(
+                          _isSubmitting
+                              ? 'Please wait...'
+                              : _isRegisterMode
+                              ? 'Create account'
+                              : 'Sign in',
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: _isSubmitting ? null : _toggleMode,
+                        child: Text(
+                          _isRegisterMode
+                              ? 'Already have an account? Sign in'
+                              : 'Need an account? Create one',
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _isSubmitting ? null : _toggleMode,
-                    child: Text(
-                      _isRegisterMode
-                          ? 'Already have an account? Sign in'
-                          : 'Need an account? Create one',
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

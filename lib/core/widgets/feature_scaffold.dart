@@ -5,12 +5,14 @@ class FeatureScaffold extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.children,
+    this.showAppBar = true,
     super.key,
   });
 
   final String title;
   final String subtitle;
   final List<Widget> children;
+  final bool showAppBar;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class FeatureScaffold extends StatelessWidget {
     final hasSubtitle = subtitle.trim().isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: showAppBar ? AppBar(title: Text(title)) : null,
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.symmetric(
