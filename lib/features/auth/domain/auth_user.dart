@@ -36,7 +36,8 @@ extension AuthRoleX on AuthRole {
 }
 
 AuthRole authRoleFromKey(String? value) {
-  switch (value) {
+  final normalized = value?.trim().toLowerCase();
+  switch (normalized) {
     case 'admin':
       return AuthRole.admin;
     case 'counter':

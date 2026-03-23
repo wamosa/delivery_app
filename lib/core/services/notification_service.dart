@@ -51,6 +51,10 @@ class NotificationService {
     if (_initialized) {
       return;
     }
+    if (kIsWeb) {
+      _initialized = true;
+      return;
+    }
 
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
@@ -107,6 +111,9 @@ class NotificationService {
   }
 
   Future<void> syncUserToken(String userId) async {
+    if (kIsWeb) {
+      return;
+    }
     final settings = await _messaging.getNotificationSettings();
     final token = await _messaging.getToken();
     if (token == null || token.isEmpty) {

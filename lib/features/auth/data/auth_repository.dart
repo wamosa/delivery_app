@@ -32,15 +32,9 @@ class AuthRepository {
           .doc(firebaseUser.uid);
 
       return userRef.snapshots().asyncMap((doc) async {
-        final firestoreRole = doc.data()?['role'] as String?;
-        var role = await _loadRoleFromClaims(firebaseUser);
-
-        if (firestoreRole != null && firestoreRole.isNotEmpty) {
-          final roleKey = role.key;
-          if (roleKey != firestoreRole) {
-            role = await _loadRoleFromClaims(firebaseUser, forceRefresh: true);
-          }
-        }
+        final roleValue = doc.data()?['role'];
+        final firestoreRole = roleValue is String ? roleValue : roleValue?.toString();
+        final role = authRoleFromKey(firestoreRole);
 
         return _createOrLoadUserProfile(
           firebaseUser,
@@ -64,7 +58,9 @@ class AuthRepository {
         .doc(firebaseUser.uid)
         .get();
 
-    final role = await _loadRoleFromClaims(firebaseUser);
+    final roleValue = doc.data()?['role'];
+    final firestoreRole = roleValue is String ? roleValue : roleValue?.toString();
+    final role = authRoleFromKey(firestoreRole);
 
     return _createOrLoadUserProfile(
       firebaseUser,
@@ -165,19 +161,5 @@ class AuthRepository {
     return fallbackUser;
   }
 
-  Future<AuthRole> _loadRoleFromClaims(
-    User firebaseUser, {
-    bool forceRefresh = false,
-  }) async {
-    final token = await firebaseUser.getIdTokenResult(forceRefresh);
-    final claims = token.claims ?? <String, dynamic>{};
-    final roleKey = claims['role'] as String?;
-    if (roleKey != null && roleKey.isNotEmpty) {
-      return authRoleFromKey(roleKey);
-    }
-    if (claims['admin'] == true) {
-      return AuthRole.admin;
-    }
-    return AuthRole.customer;
-  }
+  // Roles are sourced only from Firestore for now.
 }
