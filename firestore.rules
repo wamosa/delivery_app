@@ -10,6 +10,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    function isValidRole(value) {
+      return value is string
+        && ['admin', 'counter', 'rider', 'customer'].hasAny([value]);
+    }
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -36,7 +41,8 @@ service cloud.firestore {
           'notificationsUpdatedAt'
         ])
         && (!('role' in request.resource.data)
-          || request.resource.data.role == 'customer');
+          || isValidRole(request.resource.data.role)
+          && request.resource.data.role == 'customer');
       allow update: if (isAdmin()
           && hasOnlyKeys(request.resource.data, [
             'name',
@@ -47,7 +53,9 @@ service cloud.firestore {
             'lastNotificationToken',
             'notificationPermissionStatus',
             'notificationsUpdatedAt'
-          ]))
+          ])
+          && (!('role' in request.resource.data)
+            || isValidRole(request.resource.data.role)))
         || (isOwner(userId)
           && hasOnlyKeys(request.resource.data, [
             'name',

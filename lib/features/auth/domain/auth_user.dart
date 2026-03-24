@@ -70,12 +70,35 @@ class AuthUser {
     AuthRole? roleOverride,
   }) {
     final data = doc.data() ?? <String, dynamic>{};
+    String? asString(dynamic value) {
+      if (value == null) return null;
+      if (value is String) return value;
+      return value.toString();
+    }
+
+    AuthRole parseRole() {
+      final roleValue = data['role'];
+      if (roleValue is String || roleValue == null) {
+        return authRoleFromKey(roleValue as String?);
+      }
+      if (roleValue is bool) {
+        return roleValue ? AuthRole.admin : AuthRole.customer;
+      }
+      if (roleValue is num) {
+        return roleValue > 0 ? AuthRole.admin : AuthRole.customer;
+      }
+      final legacyIsAdmin = data['isAdmin'];
+      if (legacyIsAdmin is bool) {
+        return legacyIsAdmin ? AuthRole.admin : AuthRole.customer;
+      }
+      return AuthRole.customer;
+    }
     return AuthUser(
       id: doc.id,
-      name: data['name'] as String? ?? '',
-      phone: data['phone'] as String? ?? '',
-      email: data['email'] as String? ?? '',
-      role: roleOverride ?? authRoleFromKey(data['role'] as String?),
+      name: asString(data['name']) ?? '',
+      phone: asString(data['phone']) ?? '',
+      email: asString(data['email']) ?? '',
+      role: roleOverride ?? parseRole(),
     );
   }
 

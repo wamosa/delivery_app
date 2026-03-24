@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../core/data/business_settings_repository.dart';
 import '../../../core/firebase/firestore_paths.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../menu/domain/meal_session.dart';
 import '../../menu/domain/menu_item.dart';
 import '../../orders/domain/order_summary.dart';
@@ -111,6 +112,21 @@ class AdminRepository {
               updatedAt: updatedAt,
             );
           }).toList(),
+        );
+  }
+
+  Stream<List<AuthUser>> watchUsers() {
+    return _firestore
+        .collection(FirestorePaths.users)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(AuthUser.fromFirestore).toList()
+                ..sort((a, b) {
+                  final aLabel = a.name.isEmpty ? a.email : a.name;
+                  final bLabel = b.name.isEmpty ? b.email : b.name;
+                  return aLabel.toLowerCase().compareTo(bLabel.toLowerCase());
+                }),
         );
   }
 
@@ -244,5 +260,12 @@ class AdminRepository {
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> updateUserRole(String userId, AuthRole role) {
+    return _firestore
+        .collection(FirestorePaths.users)
+        .doc(userId)
+        .set({'role': role.key}, SetOptions(merge: true));
   }
 }

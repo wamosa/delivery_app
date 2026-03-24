@@ -2,6 +2,7 @@ import '../data/admin_repository.dart';
 import '../domain/admin_dashboard_state.dart';
 import '../domain/admin_metric.dart';
 import '../domain/business_settings.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../menu/domain/meal_session.dart';
 import '../../menu/domain/menu_item.dart';
 import '../../orders/domain/order_summary.dart';
@@ -40,6 +41,10 @@ class AdminController {
     return _repository.watchOrders();
   }
 
+  Stream<List<AuthUser>> watchUsers() {
+    return _repository.watchUsers();
+  }
+
   Future<void> saveBusinessSettings(BusinessSettings settings) {
     return _repository.saveBusinessSettings(settings);
   }
@@ -62,5 +67,9 @@ class AdminController {
 
   Future<void> updateOrderStatus(String orderId, String status) {
     return _repository.updateOrderStatus(orderId, status);
+  }
+
+  Future<void> updateUserRole(String userId, AuthRole role) {
+    return _repository.updateUserRole(userId, role);
   }
 }

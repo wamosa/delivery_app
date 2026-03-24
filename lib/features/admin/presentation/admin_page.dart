@@ -221,6 +221,11 @@ class _AdminShellState extends State<_AdminShell> {
         return _MealSessionsAdminPage(controller: controller);
       case 4:
         return _SettingsAdminPage(controller: controller);
+      case 5:
+        return _UserRolesAdminPage(
+          controller: controller,
+          currentUser: widget.user,
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -233,6 +238,7 @@ const _destinations = <_AdminDestination>[
   _AdminDestination(label: 'Menu items', icon: Icons.lunch_dining_rounded),
   _AdminDestination(label: 'Meal sessions', icon: Icons.schedule_rounded),
   _AdminDestination(label: 'Settings', icon: Icons.settings_rounded),
+  _AdminDestination(label: 'Users', icon: Icons.people_alt_rounded),
 ];
 
 class _AdminDestination {
@@ -669,6 +675,74 @@ class _SettingsAdminPage extends StatelessWidget {
   }
 }
 
+class _UserRolesAdminPage extends StatelessWidget {
+  const _UserRolesAdminPage({
+    required this.controller,
+    required this.currentUser,
+  });
+
+  final AdminController controller;
+  final AuthUser currentUser;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<AuthUser>>(
+      stream: controller.watchUsers(),
+      builder: (context, snapshot) {
+        final users = snapshot.data ?? const <AuthUser>[];
+
+        return _AdminList(
+          children: [
+            const _SimplePageHeader(
+              title: 'Users & roles',
+              subtitle:
+                  'Assign access roles for each user. Changes are saved immediately.',
+            ),
+            const SizedBox(height: 18),
+            if (snapshot.hasError)
+              _StatusCard(
+                title: 'Unable to load users',
+                subtitle:
+                    'Check your Firestore rules and confirm your account has the admin role in the users collection.',
+                detail: snapshot.error.toString(),
+                accent: const Color(0xFFFFF1F3),
+                border: const Color(0xFFFDA4AF),
+                icon: Icons.warning_amber_rounded,
+              )
+            else
+            _UsersFilterPanel(
+              users: users,
+              currentUser: currentUser,
+              onRoleChange: (userId, role) async {
+                try {
+                  await controller.updateUserRole(userId, role);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Role updated to ${role.label}.',
+                        ),
+                      ),
+                    );
+                  }
+                } catch (error) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Could not update role: $error'),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _SimplePageHeader extends StatelessWidget {
   const _SimplePageHeader({
     required this.title,
@@ -899,6 +973,84 @@ class _AdminList extends StatelessWidget {
   }
 }
 
+class _StatusCard extends StatelessWidget {
+  const _StatusCard({
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.border,
+    required this.icon,
+    this.detail,
+  });
+
+  final String title;
+  final String subtitle;
+  final String? detail;
+  final Color accent;
+  final Color border;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final detailText = detail?.trim() ?? '';
+    final hasDetail = detailText.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: accent,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFFE11D48)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.textTheme.bodySmall?.color,
+                  ),
+                ),
+                if (hasDetail) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    detailText,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF9F1239),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _StatusRow extends StatelessWidget {
   const _StatusRow({required this.label, required this.value});
 
@@ -1050,6 +1202,181 @@ class _EmptyStateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(padding: const EdgeInsets.all(24), child: Text(message)),
+    );
+  }
+}
+
+class _RolePicker extends StatelessWidget {
+  const _RolePicker({
+    required this.user,
+    required this.onChanged,
+    required this.disabled,
+  });
+
+  final AuthUser user;
+  final ValueChanged<AuthRole> onChanged;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButton<AuthRole>(
+      value: user.role,
+      onChanged: disabled
+          ? null
+          : (value) {
+              if (value == null) {
+                return;
+              }
+              onChanged(value);
+            },
+      items: AuthRole.values
+          .map(
+            (role) => DropdownMenuItem<AuthRole>(
+              value: role,
+              child: Text(role.label),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _UsersFilterPanel extends StatefulWidget {
+  const _UsersFilterPanel({
+    required this.users,
+    required this.currentUser,
+    required this.onRoleChange,
+  });
+
+  final List<AuthUser> users;
+  final AuthUser currentUser;
+  final Future<void> Function(String userId, AuthRole role) onRoleChange;
+
+  @override
+  State<_UsersFilterPanel> createState() => _UsersFilterPanelState();
+}
+
+class _UsersFilterPanelState extends State<_UsersFilterPanel> {
+  final _searchController = TextEditingController();
+  AuthRole? _roleFilter;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _searchController.text.trim().toLowerCase();
+    final filtered = widget.users.where((user) {
+      final matchesRole = _roleFilter == null || user.role == _roleFilter;
+      if (query.isEmpty) {
+        return matchesRole;
+      }
+      final name = user.name.toLowerCase();
+      final email = user.email.toLowerCase();
+      final id = user.id.toLowerCase();
+      return matchesRole &&
+          (name.contains(query) || email.contains(query) || id.contains(query));
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Search & filter',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Search by name, email, or id',
+                    prefixIcon: Icon(Icons.search_rounded),
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 8,
+                  children: [
+                    _FilterChip(
+                      label: 'All roles',
+                      selected: _roleFilter == null,
+                      onSelected: () => setState(() => _roleFilter = null),
+                    ),
+                    ...AuthRole.values.map(
+                      (role) => _FilterChip(
+                        label: role.label,
+                        selected: _roleFilter == role,
+                        onSelected: () =>
+                            setState(() => _roleFilter = role),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        if (filtered.isEmpty)
+          const _EmptyStateCard(
+            message: 'No users match that search or filter.',
+          )
+        else
+          ...filtered.map(
+            (user) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Card(
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(18),
+                  title: Text(user.name.isEmpty ? user.email : user.name),
+                  subtitle: Text(user.name.isEmpty ? user.id : user.email),
+                  trailing: _RolePicker(
+                    user: user,
+                    disabled: user.id == widget.currentUser.id,
+                    onChanged: (role) async {
+                      await widget.onRoleChange(user.id, role);
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onSelected(),
     );
   }
 }
