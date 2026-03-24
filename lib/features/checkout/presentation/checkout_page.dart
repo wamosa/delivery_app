@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
+import '../../cart/application/cart_controller.dart';
+import '../../cart/domain/cart_line_item.dart';
 import '../application/checkout_controller.dart';
 import '../domain/place_order_item.dart';
 import '../domain/place_order_request.dart';
@@ -17,6 +19,7 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   final CheckoutController _controller = getIt<CheckoutController>();
+  final CartController _cartController = getIt<CartController>();
   final TextEditingController _addressController = TextEditingController();
   bool _isSubmitting = false;
   bool _isLocating = false;
@@ -40,6 +43,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
       subtitle:
           'Place address capture, payment selection, and order confirmation logic here.',
       children: [
+        ValueListenableBuilder<List<CartLineItem>>(
+          valueListenable: _cartController.watchItems(),
+          builder: (context, items, _) {
+            if (items.isEmpty) {
+              return const InfoCard(
+                title: 'Your cart is empty',
+                description: 'Add items from the menu to place an order.',
+              );
+            }
+
+            final summary = _cartController.loadSummary();
+            final itemLines = items
+                .map(
+                  (entry) =>
+                      '${entry.quantity}x ${entry.item.name} • KSh ${entry.lineTotal.toStringAsFixed(0)}',
+                )
+                .join('\n');
+
+            return InfoCard(
+              title: 'Cart items',
+              description:
+                  '$itemLines\n\nSubtotal ${summary.subtotalLabel} • Delivery ${summary.deliveryFeeLabel} • Total ${summary.totalLabel}',
+            );
+          },
+        ),
         InfoCard(
           title: 'Delivery details',
           description:
@@ -100,6 +128,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
 
   Future<void> _submitSampleOrder() async {
+    final items = _cartController.items;
+    if (items.isEmpty) {
+      setState(() {
+        _message = 'Your cart is empty. Add items before checkout.';
+      });
+      return;
+    }
     final address = _addressController.text.trim();
     if (address.isEmpty) {
       setState(() {
@@ -122,9 +157,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
     try {
       final result = await _controller.placeOrder(
         PlaceOrderRequest(
-          items: [
-            PlaceOrderItem(itemId: 'chicken-biryani', quantity: 1),
-          ],
+          items: items
+              .map(
+                (entry) => PlaceOrderItem(
+                  itemId: entry.item.id,
+                  quantity: entry.quantity,
+                ),
+              )
+              .toList(),
           deliveryType: 'delivery',
           address: address,
           deliveryLatitude: _latitude,
@@ -137,8 +177,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
       setState(() {
         _message =
-            'Order ${result.orderId} created. Total KSh ${result.total.toStringAsFixed(0)} with status ${result.status}.';
+            'Your order has been made. Order ${result.orderId} received with status ${result.status}.';
       });
+      _cartController.clear();
     } catch (error) {
       if (!mounted) {
         return;
