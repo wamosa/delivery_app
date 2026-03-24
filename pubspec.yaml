@@ -43,6 +43,7 @@ dependencies:
   firebase_messaging: ^16.1.2
   firebase_storage: ^13.1.0
   flutter_local_notifications: ^19.4.2
+  geolocator: ^14.0.2
   get_it: ^8.0.3
 
 dev_dependencies:

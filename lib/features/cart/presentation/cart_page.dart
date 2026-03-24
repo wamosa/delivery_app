@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
@@ -21,6 +22,17 @@ class CartPage extends StatelessWidget {
           title: '${summary.itemCount} items ready for checkout',
           description:
               'Subtotal ${summary.subtotalLabel} • Delivery ${summary.deliveryFeeLabel} • Total ${summary.totalLabel}',
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: summary.itemCount == 0
+                ? null
+                : () => Navigator.pushNamed(context, AppRoutes.checkout),
+            icon: const Icon(Icons.shopping_cart_checkout_rounded),
+            label: const Text('Proceed to checkout'),
+          ),
         ),
       ],
     );

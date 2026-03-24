@@ -74,6 +74,7 @@ exports.placeOrder = onCall({ enforceAppCheck: true }, async (request) => {
   const address = typeof request.data.address === "string"
     ? request.data.address.trim()
     : "";
+  const deliveryLocation = request.data.deliveryLocation || null;
 
   if (!deliveryType) {
     throw new HttpsError("invalid-argument", "deliveryType is required.");
@@ -81,6 +82,14 @@ exports.placeOrder = onCall({ enforceAppCheck: true }, async (request) => {
 
   if (!address) {
     throw new HttpsError("invalid-argument", "address is required.");
+  }
+
+  if (deliveryType === "delivery") {
+    const lat = Number(deliveryLocation?.lat);
+    const lng = Number(deliveryLocation?.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      throw new HttpsError("invalid-argument", "deliveryLocation is required for delivery orders.");
+    }
   }
 
   const result = await db.runTransaction(async (transaction) => {
@@ -167,6 +176,12 @@ exports.placeOrder = onCall({ enforceAppCheck: true }, async (request) => {
       mealSessionId: sessionRef.id,
       deliveryType,
       address,
+      deliveryLocation: deliveryLocation && deliveryLocation.lat != null && deliveryLocation.lng != null
+        ? {
+          lat: Number(deliveryLocation.lat),
+          lng: Number(deliveryLocation.lng),
+        }
+        : null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 

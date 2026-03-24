@@ -406,49 +406,72 @@ class _OrdersAdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<OrderSummary>>(
-      stream: controller.watchOrders(),
-      builder: (context, snapshot) {
-        final orders = snapshot.data ?? const <OrderSummary>[];
+    return StreamBuilder<List<AuthUser>>(
+      stream: controller.watchRiders(),
+      builder: (context, ridersSnapshot) {
+        final riders = ridersSnapshot.data ?? const <AuthUser>[];
 
-        return _AdminList(
-          children: [
-            const _SimplePageHeader(
-              title: 'Orders',
-              subtitle:
-                  'Track incoming orders and move each one through the kitchen and delivery pipeline.',
-            ),
-            const SizedBox(height: 18),
-            if (orders.isEmpty)
-              const _EmptyStateCard(
-                message:
-                    'No orders found yet. New order activity will appear here.',
-              )
-            else
-              ...orders.map(
-                (order) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _OrderCard(
-                    order: order,
-                    onStatusChanged: (status) async {
-                      await controller.updateOrderStatus(
-                        order.orderNumber.replaceFirst('#', ''),
-                        status,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              '${order.orderNumber} updated to ${_labelize(status)}.',
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
+        return StreamBuilder<List<OrderSummary>>(
+          stream: controller.watchOrders(),
+          builder: (context, snapshot) {
+            final orders = snapshot.data ?? const <OrderSummary>[];
+
+            return _AdminList(
+              children: [
+                const _SimplePageHeader(
+                  title: 'Orders',
+                  subtitle:
+                      'Track incoming orders and move each one through the kitchen and delivery pipeline.',
                 ),
-              ),
-          ],
+                const SizedBox(height: 18),
+                if (orders.isEmpty)
+                  const _EmptyStateCard(
+                    message:
+                        'No orders found yet. New order activity will appear here.',
+                  )
+                else
+                  ...orders.map(
+                    (order) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _OrderCard(
+                        order: order,
+                        riders: riders,
+                        onStatusChanged: (status) async {
+                          await controller.updateOrderStatus(
+                            order.orderNumber.replaceFirst('#', ''),
+                            status,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${order.orderNumber} updated to ${_labelize(status)}.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        onAssignRider: (rider) async {
+                          await controller.assignOrderToRider(
+                            orderId: order.orderNumber.replaceFirst('#', ''),
+                            rider: rider,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${order.orderNumber} assigned to ${rider.name.isEmpty ? rider.email : rider.name}.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
@@ -1151,13 +1174,41 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _OrderCard extends StatelessWidget {
-  const _OrderCard({required this.order, required this.onStatusChanged});
+  const _OrderCard({
+    required this.order,
+    required this.riders,
+    required this.onStatusChanged,
+    required this.onAssignRider,
+  });
 
   final OrderSummary order;
+  final List<AuthUser> riders;
   final ValueChanged<String> onStatusChanged;
+  final ValueChanged<AuthUser> onAssignRider;
 
   @override
   Widget build(BuildContext context) {
+    final assignedId = order.assignedRiderId;
+    final assignedRider = assignedId == null
+        ? null
+        : riders.firstWhere(
+            (rider) => rider.id == assignedId,
+            orElse: () => AuthUser(
+              id: assignedId,
+              name: order.assignedRiderName ?? '',
+              phone: '',
+              email: order.assignedRiderEmail ?? '',
+              role: AuthRole.rider,
+            ),
+          );
+    final hasAssigned = assignedId != null;
+    final assignedLabel = assignedRider == null
+        ? null
+        : assignedRider.name.isEmpty
+            ? assignedRider.email
+            : assignedRider.name;
+    final showAssignedLabel = hasAssigned && (assignedLabel?.isNotEmpty ?? false);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -1172,6 +1223,52 @@ class _OrderCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text('Last update: ${order.updatedAt}'),
+            if (order.deliveryAddress != null &&
+                order.deliveryAddress!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text('Deliver to: ${order.deliveryAddress}'),
+            ],
+            if (order.deliveryLatitude != null &&
+                order.deliveryLongitude != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Coords: ${order.deliveryLatitude!.toStringAsFixed(6)}, ${order.deliveryLongitude!.toStringAsFixed(6)}',
+              ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              'Assigned rider',
+              style: Theme.of(context).textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            if (showAssignedLabel) ...[
+              Text('Current: $assignedLabel'),
+              const SizedBox(height: 8),
+            ],
+            DropdownButton<AuthUser>(
+              isExpanded: true,
+              value: assignedRider != null &&
+                      riders.any((rider) => rider.id == assignedRider.id)
+                  ? assignedRider
+                  : null,
+              hint: const Text('Select rider'),
+              items: riders
+                  .map(
+                    (rider) => DropdownMenuItem<AuthUser>(
+                      value: rider,
+                      child: Text(
+                        rider.name.isEmpty ? rider.email : rider.name,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (rider) {
+                if (rider == null) {
+                  return;
+                }
+                onAssignRider(rider);
+              },
+            ),
             const SizedBox(height: 14),
             Wrap(
               spacing: 8,

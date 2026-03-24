@@ -106,10 +106,19 @@ class AdminRepository {
             final updatedAt = stamp == null
                 ? 'Awaiting update'
                 : '${stamp.year}-${stamp.month.toString().padLeft(2, '0')}-${stamp.day.toString().padLeft(2, '0')} ${stamp.hour.toString().padLeft(2, '0')}:${stamp.minute.toString().padLeft(2, '0')}';
+            final location = data['deliveryLocation'] as Map<String, dynamic>?;
+            final latitude = location?['lat'];
+            final longitude = location?['lng'];
             return OrderSummary(
               orderNumber: '#${doc.id}',
               stage: data['status'] as String? ?? 'pending',
               updatedAt: updatedAt,
+              deliveryAddress: data['address'] as String?,
+              deliveryLatitude: latitude is num ? latitude.toDouble() : null,
+              deliveryLongitude: longitude is num ? longitude.toDouble() : null,
+              assignedRiderId: data['assignedRiderId'] as String?,
+              assignedRiderName: data['assignedRiderName'] as String?,
+              assignedRiderEmail: data['assignedRiderEmail'] as String?,
             );
           }).toList(),
         );
@@ -118,6 +127,22 @@ class AdminRepository {
   Stream<List<AuthUser>> watchUsers() {
     return _firestore
         .collection(FirestorePaths.users)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(AuthUser.fromFirestore).toList()
+                ..sort((a, b) {
+                  final aLabel = a.name.isEmpty ? a.email : a.name;
+                  final bLabel = b.name.isEmpty ? b.email : b.name;
+                  return aLabel.toLowerCase().compareTo(bLabel.toLowerCase());
+                }),
+        );
+  }
+
+  Stream<List<AuthUser>> watchRiders() {
+    return _firestore
+        .collection(FirestorePaths.users)
+        .where('role', isEqualTo: AuthRole.rider.key)
         .snapshots()
         .map(
           (snapshot) =>
@@ -259,6 +284,18 @@ class AdminRepository {
     return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> assignOrderToRider({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
+      'assignedRiderId': rider.id,
+      'assignedRiderName': rider.name,
+      'assignedRiderEmail': rider.email,
+      'assignedAt': FieldValue.serverTimestamp(),
     });
   }
 

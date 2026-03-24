@@ -45,6 +45,10 @@ class AdminController {
     return _repository.watchUsers();
   }
 
+  Stream<List<AuthUser>> watchRiders() {
+    return _repository.watchRiders();
+  }
+
   Future<void> saveBusinessSettings(BusinessSettings settings) {
     return _repository.saveBusinessSettings(settings);
   }
@@ -67,6 +71,13 @@ class AdminController {
 
   Future<void> updateOrderStatus(String orderId, String status) {
     return _repository.updateOrderStatus(orderId, status);
+  }
+
+  Future<void> assignOrderToRider({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _repository.assignOrderToRider(orderId: orderId, rider: rider);
   }
 
   Future<void> updateUserRole(String userId, AuthRole role) {

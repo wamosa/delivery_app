@@ -572,8 +572,7 @@ class _MenuPageState extends State<MenuPage> {
                           clipBehavior: Clip.none,
                           children: [
                             IconButton(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, AppRoutes.cart),
+                              onPressed: () => _showCartActions(context),
                               icon: const Icon(Icons.shopping_bag_outlined),
                             ),
                             if (itemCount > 0)
@@ -624,6 +623,103 @@ class _MenuPageState extends State<MenuPage> {
                           resolvedState.isPrepWindow || !settings.orderingOpen,
                     ),
                     const SizedBox(height: 14),
+                    ValueListenableBuilder<List<CartLineItem>>(
+                      valueListenable: _cartController.watchItems(),
+                      builder: (context, items, _) {
+                        final itemCount = items.fold<int>(
+                          0,
+                          (sum, entry) => sum + entry.quantity,
+                        );
+                        if (itemCount == 0) {
+                          return const SizedBox.shrink();
+                        }
+
+                        final summary = _cartController.loadSummary();
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 18),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: const Color(0xFFF4C7D9),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$itemCount items in cart',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Total ${summary.totalLabel}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: const Color(0xFF6E5B67)),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () => Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.cart,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.shopping_bag_outlined,
+                                    ),
+                                    label: const Text('View cart'),
+                                  ),
+                                  FilledButton.icon(
+                                    onPressed: () => Navigator.pushNamed(
+                                      context,
+                                      AppRoutes.checkout,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.shopping_cart_checkout_rounded,
+                                    ),
+                                    label: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text('Checkout'),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            '$itemCount',
+                                            style: const TextStyle(
+                                              color: Color(0xFFE91E63),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
                     ValueListenableBuilder<InAppNotification?>(
                       valueListenable: _notificationService.currentNotification,
                       builder: (context, notification, _) {
@@ -734,6 +830,78 @@ class _MenuPageState extends State<MenuPage> {
               ),
             );
           },
+        );
+      },
+    );
+  }
+
+  void _showCartActions(BuildContext context) {
+    final summary = _cartController.loadSummary();
+    final itemCount = _cartController
+        .watchItems()
+        .value
+        .fold<int>(0, (sum, entry) => sum + entry.quantity);
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cart',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  itemCount == 0
+                      ? 'Your cart is empty.'
+                      : '$itemCount items • Total ${summary.totalLabel}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyLarge
+                      ?.copyWith(color: const Color(0xFF6E5B67)),
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, AppRoutes.cart);
+                    },
+                    icon: const Icon(Icons.shopping_bag_outlined),
+                    label: const Text('View cart'),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: itemCount == 0
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                            Navigator.pushNamed(context, AppRoutes.checkout);
+                          },
+                    icon: const Icon(Icons.shopping_cart_checkout_rounded),
+                    label: const Text('Proceed to checkout'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
