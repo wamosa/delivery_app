@@ -54,4 +54,8 @@ class AuthController {
   Future<void> signOut() {
     return _repository.signOut();
   }
+
+  Future<void> sendPasswordResetEmail(String email) {
+    return _repository.sendPasswordResetEmail(email);
+  }
 }

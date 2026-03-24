@@ -48,15 +48,15 @@ class AyeyoApp extends StatelessWidget {
         AppRoutes.auth: (_) => const AuthPage(),
         AppRoutes.adminLogin: (_) => const AuthPage(),
         AppRoutes.menu: (_) => const RoleGate(
-          allowedRoles: [AuthRole.customer],
+          allowedRoles: [AuthRole.customer, AuthRole.admin],
           child: MenuPage(),
         ),
         AppRoutes.cart: (_) => const RoleGate(
-          allowedRoles: [AuthRole.customer],
+          allowedRoles: [AuthRole.customer, AuthRole.admin],
           child: CartPage(),
         ),
         AppRoutes.checkout: (_) => const RoleGate(
-          allowedRoles: [AuthRole.customer],
+          allowedRoles: [AuthRole.customer, AuthRole.admin],
           child: CheckoutPage(),
         ),
         AppRoutes.orders: (_) => const RoleGate(

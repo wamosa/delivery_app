@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../di/service_locator.dart';
@@ -17,6 +18,7 @@ class AppBootstrap {
       );
 
       configureDependencies();
+      await _configureAuthPersistence();
       await _configureAppCheck();
       await _configureCrashlytics();
       await NotificationService.instance.initialize();
@@ -70,5 +72,13 @@ class AppBootstrap {
       appleProvider:
           kDebugMode ? AppleProvider.debug : AppleProvider.appAttest,
     );
+  }
+
+  static Future<void> _configureAuthPersistence() async {
+    if (!kIsWeb) {
+      return;
+    }
+
+    await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
   }
 }

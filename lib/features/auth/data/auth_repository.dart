@@ -123,6 +123,10 @@ class AuthRepository {
     return _auth.signOut();
   }
 
+  Future<void> sendPasswordResetEmail(String email) {
+    return _auth.sendPasswordResetEmail(email: email);
+  }
+
   Future<void> saveUser(AuthUser user) {
     return _firestore
         .collection(FirestorePaths.users)

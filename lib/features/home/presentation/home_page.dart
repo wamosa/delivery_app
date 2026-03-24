@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../admin/presentation/admin_page.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
@@ -107,9 +108,80 @@ class _AdminHomePage extends StatelessWidget {
                         );
                       },
                     ),
+                    const SizedBox(height: 16),
+                    _AdminHomeCard(
+                      title: 'Rider workspace',
+                      description:
+                          'Open the rider experience to view assigned deliveries and update statuses.',
+                      icon: Icons.delivery_dining_rounded,
+                      onPressed: () {
+                        Navigator.of(context).pushNamed(AppRoutes.rider);
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _RoleSwitcherCard(
+                      onOpenRole: (route) {
+                        Navigator.of(context).pushNamed(route);
+                      },
+                    ),
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleSwitcherCard extends StatelessWidget {
+  const _RoleSwitcherCard({required this.onOpenRole});
+
+  final ValueChanged<String> onOpenRole;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Preview other roles',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Quickly jump into other role experiences without changing your account.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => onOpenRole(AppRoutes.rider),
+                  icon: const Icon(Icons.delivery_dining_rounded),
+                  label: const Text('Rider view'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => onOpenRole(AppRoutes.counter),
+                  icon: const Icon(Icons.point_of_sale_rounded),
+                  label: const Text('Counter view'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => onOpenRole(AppRoutes.menu),
+                  icon: const Icon(Icons.restaurant_menu_rounded),
+                  label: const Text('Customer view'),
+                ),
+              ],
             ),
           ],
         ),

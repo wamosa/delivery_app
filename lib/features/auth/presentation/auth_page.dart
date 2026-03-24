@@ -21,6 +21,7 @@ class _AuthPageState extends State<AuthPage> {
 
   bool _isRegisterMode = false;
   bool _isSubmitting = false;
+  bool _obscurePassword = true;
   String? _errorMessage;
 
   @override
@@ -77,6 +78,46 @@ class _AuthPageState extends State<AuthPage> {
       _isRegisterMode = !_isRegisterMode;
       _errorMessage = null;
     });
+  }
+
+  Future<void> _sendPasswordReset() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() {
+        _errorMessage = 'Enter a valid email address to reset your password.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await _controller.sendPasswordResetEmail(email);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Password reset email sent to $email.'),
+          ),
+        );
+      }
+    } on FirebaseAuthException catch (error) {
+      setState(() {
+        _errorMessage = error.message ?? error.code;
+      });
+    } catch (error) {
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   @override
@@ -138,10 +179,27 @@ class _AuthPageState extends State<AuthPage> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Password'),
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         textInputAction: TextInputAction.done,
                         onFieldSubmitted: (_) => _submit(),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          suffixIcon: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                            ),
+                            tooltip: _obscurePassword
+                                ? 'Show password'
+                                : 'Hide password',
+                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Enter your password.';
@@ -161,6 +219,13 @@ class _AuthPageState extends State<AuthPage> {
                           ),
                         ),
                       ],
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: _isSubmitting ? null : _sendPasswordReset,
+                          child: const Text('Forgot password?'),
+                        ),
+                      ),
                       const SizedBox(height: 20),
                       FilledButton(
                         onPressed: _isSubmitting ? null : _submit,
