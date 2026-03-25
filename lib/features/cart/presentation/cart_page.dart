@@ -17,6 +17,7 @@ class CartPage extends StatelessWidget {
       title: 'Cart',
       subtitle:
           'This feature owns selected items, promo codes, fees, and validation before checkout.',
+      showThemeToggle: false,
       children: [
         InfoCard(
           title: '${summary.itemCount} items ready for checkout',

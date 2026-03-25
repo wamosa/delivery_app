@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import 'theme_mode_toggle_button.dart';
+
 class FeatureScaffold extends StatelessWidget {
   const FeatureScaffold({
     required this.title,
     required this.subtitle,
     required this.children,
     this.showAppBar = true,
+    this.showThemeToggle = true,
     super.key,
   });
 
@@ -13,6 +16,7 @@ class FeatureScaffold extends StatelessWidget {
   final String subtitle;
   final List<Widget> children;
   final bool showAppBar;
+  final bool showThemeToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +31,14 @@ class FeatureScaffold extends StatelessWidget {
     final hasSubtitle = subtitle.trim().isNotEmpty;
 
     return Scaffold(
-      appBar: showAppBar ? AppBar(title: Text(title)) : null,
+      appBar: showAppBar
+          ? AppBar(
+              title: Text(title),
+              actions: showThemeToggle
+                  ? const [ThemeModeToggleButton()]
+                  : null,
+            )
+          : null,
       body: SafeArea(
         child: ListView(
           padding: EdgeInsets.symmetric(

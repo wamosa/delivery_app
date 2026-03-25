@@ -8,6 +8,7 @@ import '../../../core/di/service_locator.dart';
 import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
+import '../../../core/widgets/theme_mode_toggle_button.dart';
 import '../application/home_controller.dart';
 
 class HomePage extends StatelessWidget {
@@ -61,6 +62,7 @@ class _AdminHomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Admin'),
         actions: [
+          const ThemeModeToggleButton(),
           IconButton(
             tooltip: 'Logout',
             onPressed: authController.signOut,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
@@ -42,6 +43,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       title: 'Checkout',
       subtitle:
           'Place address capture, payment selection, and order confirmation logic here.',
+      showThemeToggle: false,
       children: [
         ValueListenableBuilder<List<CartLineItem>>(
           valueListenable: _cartController.watchItems(),
@@ -180,6 +182,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
             'Your order has been made. Order ${result.orderId} received with status ${result.status}.';
       });
       _cartController.clear();
+      if (!mounted) {
+        return;
+      }
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.orders,
+        arguments: {
+          'orderId': result.orderId,
+          'status': result.status,
+        },
+      );
     } catch (error) {
       if (!mounted) {
         return;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/layout/breakpoints.dart';
 import '../../../core/widgets/feature_scaffold.dart';
+import '../../../core/widgets/theme_mode_toggle_button.dart';
 import '../../../core/di/service_locator.dart';
 import '../../auth/application/auth_controller.dart';
 import '../../auth/domain/auth_user.dart';
@@ -102,6 +103,7 @@ class _AdminShellState extends State<_AdminShell> {
       appBar: AppBar(
         title: Text(_destinations[_selectedIndex].label),
         actions: [
+          const ThemeModeToggleButton(),
           IconButton(
             tooltip: 'Logout',
             onPressed: _authController.signOut,

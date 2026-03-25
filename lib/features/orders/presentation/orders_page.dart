@@ -12,25 +12,47 @@ class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = getIt<OrdersController>();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final bannerMessage = _buildBannerMessage(args);
 
     return FutureBuilder<List<OrderSummary>>(
       future: controller.loadOrders(),
       builder: (context, snapshot) {
         final orders = snapshot.data ?? const <OrderSummary>[];
+        final cards = <Widget>[
+          if (bannerMessage != null)
+            InfoCard(
+              title: 'Order received',
+              description: bannerMessage,
+            ),
+          ...orders.map(
+            (order) => InfoCard(
+              title: order.orderNumber,
+              description: '${order.stage} • ${order.updatedAt}',
+            ),
+          ),
+        ];
         return FeatureScaffold(
           title: 'Orders',
           subtitle:
               'Tracking, history, reorder, rider updates, and customer support hooks belong here.',
-          children: orders
-              .map(
-                (order) => InfoCard(
-                  title: order.orderNumber,
-                  description: '${order.stage} • ${order.updatedAt}',
-                ),
-              )
-              .toList(),
+          showThemeToggle: false,
+          children: cards,
         );
       },
     );
+  }
+
+  static String? _buildBannerMessage(Object? args) {
+    if (args is! Map) {
+      return null;
+    }
+    final orderId = args['orderId'] as String?;
+    final status = args['status'] as String?;
+    if (orderId == null || orderId.isEmpty) {
+      return null;
+    }
+    final statusLabel = (status == null || status.isEmpty) ? 'received' : status;
+    return 'Order #$orderId is $statusLabel. You can track updates below.';
   }
 }

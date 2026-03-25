@@ -19,6 +19,10 @@ class OrdersController {
     return _repository.watchAssignedOrders();
   }
 
+  Stream<List<OrderSummary>> watchAdminOrders() {
+    return _repository.watchAdminOrders();
+  }
+
   Future<void> updateOrderStatus(String orderId, String status) {
     return _repository.updateOrderStatus(orderId, status);
   }

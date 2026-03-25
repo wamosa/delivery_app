@@ -38,6 +38,7 @@ class RoleGate extends StatelessWidget {
           return FeatureScaffold(
             title: 'Access denied',
             subtitle: 'Your account role does not have permission for this area.',
+            showThemeToggle: false,
             children: [
               Card(
                 child: ListTile(
