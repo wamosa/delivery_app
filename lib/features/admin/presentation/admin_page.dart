@@ -154,14 +154,12 @@ class _AdminShellState extends State<_AdminShell> {
                         ),
                       ),
                     ),
-                    trailing: Expanded(
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: IconButton(
-                          tooltip: 'Sign out',
-                          onPressed: _authController.signOut,
-                          icon: const Icon(Icons.logout_rounded),
-                        ),
+                    trailing: Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: IconButton(
+                        tooltip: 'Sign out',
+                        onPressed: _authController.signOut,
+                        icon: const Icon(Icons.logout_rounded),
                       ),
                     ),
                     destinations: _destinations

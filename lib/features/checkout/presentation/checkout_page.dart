@@ -47,16 +47,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ValueListenableBuilder<List<CartLineItem>>(
           valueListenable: _cartController.watchItems(),
           builder: (context, items, _) {
-            return InfoCard(
-              title: 'Checkout UI loaded',
-              description:
-                  'Items in cart: ${items.length}. If you see this card, the checkout body is rendering.',
-            );
-          },
-        ),
-        ValueListenableBuilder<List<CartLineItem>>(
-          valueListenable: _cartController.watchItems(),
-          builder: (context, items, _) {
             if (items.isEmpty) {
               return const InfoCard(
                 title: 'Your cart is empty',

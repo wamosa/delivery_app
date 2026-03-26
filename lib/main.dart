@@ -33,11 +33,13 @@ class _AppStartup extends StatelessWidget {
       future: AppBootstrap.initialize(),
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
-          return const MaterialApp(
+          return MaterialApp(
             debugShowCheckedModeBanner: false,
-            home: _StartupStatusScreen(
-              title: 'Starting Ayeyo',
-              message: 'please wait while we prepare everything for you...',
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => const _StartupStatusScreen(
+                title: 'Starting Ayeyo',
+                message: 'please wait while we prepare everything for you...',
+              ),
             ),
           );
         }
@@ -48,9 +50,11 @@ class _AppStartup extends StatelessWidget {
               ? 'Startup failed: $errorDetails'
               : 'We could not start the app. Please check your connection and try again.';
           return MaterialApp(
-            home: _StartupStatusScreen(
-              title: 'Startup failed',
-              message: message,
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => _StartupStatusScreen(
+                title: 'Startup failed',
+                message: message,
+              ),
             ),
           );
         }
