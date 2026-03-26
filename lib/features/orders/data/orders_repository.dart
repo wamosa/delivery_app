@@ -86,6 +86,17 @@ class OrdersRepository {
     });
   }
 
+  Future<void> updateRiderLocation({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+  }) {
+    return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
+      'riderLocation': {'lat': latitude, 'lng': longitude},
+      'riderLocationUpdatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   OrderSummary _toSummary(Map<String, dynamic> data, String id) {
     final stamp =
         ((data['updatedAt'] ?? data['createdAt']) as Timestamp?)?.toDate();
@@ -95,16 +106,29 @@ class OrdersRepository {
     final location = data['deliveryLocation'] as Map<String, dynamic>?;
     final latitude = location?['lat'];
     final longitude = location?['lng'];
+    final riderLocation = data['riderLocation'] as Map<String, dynamic>?;
+    final riderLatitude = riderLocation?['lat'];
+    final riderLongitude = riderLocation?['lng'];
+    final riderStamp =
+        (data['riderLocationUpdatedAt'] as Timestamp?)?.toDate();
+    final riderUpdatedLabel = riderStamp == null
+        ? null
+        : '${riderStamp.year}-${riderStamp.month.toString().padLeft(2, '0')}-${riderStamp.day.toString().padLeft(2, '0')} ${riderStamp.hour.toString().padLeft(2, '0')}:${riderStamp.minute.toString().padLeft(2, '0')}';
     return OrderSummary(
+      orderId: id,
       orderNumber: '#$id',
       stage: data['status'] as String? ?? 'pending',
       updatedAt: updatedLabel,
       deliveryAddress: data['address'] as String?,
       deliveryLatitude: latitude is num ? latitude.toDouble() : null,
       deliveryLongitude: longitude is num ? longitude.toDouble() : null,
+      riderLatitude: riderLatitude is num ? riderLatitude.toDouble() : null,
+      riderLongitude: riderLongitude is num ? riderLongitude.toDouble() : null,
+      riderLocationUpdatedAt: riderUpdatedLabel,
       assignedRiderId: data['assignedRiderId'] as String?,
       assignedRiderName: data['assignedRiderName'] as String?,
       assignedRiderEmail: data['assignedRiderEmail'] as String?,
+      trackRiderLocation: data['trackRiderLocation'] as bool? ?? false,
     );
   }
 }

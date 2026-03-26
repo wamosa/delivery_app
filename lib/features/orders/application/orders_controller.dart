@@ -26,4 +26,16 @@ class OrdersController {
   Future<void> updateOrderStatus(String orderId, String status) {
     return _repository.updateOrderStatus(orderId, status);
   }
+
+  Future<void> updateRiderLocation({
+    required String orderId,
+    required double latitude,
+    required double longitude,
+  }) {
+    return _repository.updateRiderLocation(
+      orderId: orderId,
+      latitude: latitude,
+      longitude: longitude,
+    );
+  }
 }

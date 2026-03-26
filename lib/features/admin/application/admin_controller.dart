@@ -80,6 +80,13 @@ class AdminController {
     return _repository.assignOrderToRider(orderId: orderId, rider: rider);
   }
 
+  Future<void> updateOrderTracking({
+    required String orderId,
+    required bool enabled,
+  }) {
+    return _repository.updateOrderTracking(orderId: orderId, enabled: enabled);
+  }
+
   Future<void> updateUserRole(String userId, AuthRole role) {
     return _repository.updateUserRole(userId, role);
   }

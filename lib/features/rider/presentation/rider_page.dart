@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/di/service_locator.dart';
 import '../../../core/widgets/theme_mode_toggle_button.dart';
@@ -6,13 +10,125 @@ import '../../orders/application/orders_controller.dart';
 import '../../orders/domain/order_statuses.dart';
 import '../../orders/domain/order_summary.dart';
 
-class RiderPage extends StatelessWidget {
+class RiderPage extends StatefulWidget {
   const RiderPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = getIt<OrdersController>();
+  State<RiderPage> createState() => _RiderPageState();
+}
 
+class _RiderPageState extends State<RiderPage> {
+  late final OrdersController _controller;
+  late final Stream<List<OrderSummary>> _ordersStream;
+  StreamSubscription<List<OrderSummary>>? _ordersSub;
+  StreamSubscription<Position>? _positionSub;
+  Set<String> _trackingOrderIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = getIt<OrdersController>();
+    _ordersStream = _controller.watchAssignedOrders().asBroadcastStream();
+    _ordersSub = _ordersStream.listen(_handleOrdersUpdate);
+  }
+
+  @override
+  void dispose() {
+    _ordersSub?.cancel();
+    _positionSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _handleOrdersUpdate(List<OrderSummary> orders) async {
+    final nextTrackingIds = orders
+        .where(
+          (order) =>
+              order.trackRiderLocation &&
+              order.stage == OrderStatuses.outForDelivery,
+        )
+        .map((order) => order.orderId)
+        .toSet();
+
+    if (nextTrackingIds.isEmpty) {
+      _trackingOrderIds = {};
+      await _stopLocationTracking();
+      return;
+    }
+
+    _trackingOrderIds = nextTrackingIds;
+    await _ensureLocationTracking();
+  }
+
+  Future<void> _stopLocationTracking() async {
+    await _positionSub?.cancel();
+    _positionSub = null;
+  }
+
+  Future<void> _ensureLocationTracking() async {
+    if (_positionSub != null) {
+      return;
+    }
+
+    final hasPermission = await _ensureLocationPermission();
+    if (!hasPermission) {
+      return;
+    }
+
+    const settings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 20,
+    );
+
+    _positionSub =
+        Geolocator.getPositionStream(locationSettings: settings).listen(
+      (position) {
+        for (final orderId in _trackingOrderIds) {
+          _controller.updateRiderLocation(
+            orderId: orderId,
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+        }
+      },
+    );
+  }
+
+  Future<bool> _ensureLocationPermission() async {
+    final enabled = await Geolocator.isLocationServiceEnabled();
+    if (!enabled) {
+      _showSnack('Location services are disabled.');
+      return false;
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.denied) {
+      _showSnack('Location permission was denied.');
+      return false;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnack('Location permission is permanently denied.');
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Rider Dashboard'),
@@ -49,7 +165,7 @@ class RiderPage extends StatelessWidget {
       ),
       body: SafeArea(
         child: StreamBuilder<List<OrderSummary>>(
-          stream: controller.watchAssignedOrders(),
+          stream: _ordersStream,
           builder: (context, snapshot) {
             final orders = snapshot.data ?? const <OrderSummary>[];
             final newOrders = orders
@@ -191,6 +307,8 @@ class _RiderOrderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final address = order.deliveryAddress ?? 'No address provided';
+    final canNavigate =
+        order.deliveryLatitude != null && order.deliveryLongitude != null;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -223,8 +341,39 @@ class _RiderOrderRow extends StatelessWidget {
               ],
             ),
           ),
+          if (canNavigate) ...[
+            const SizedBox(width: 12),
+            TextButton.icon(
+              onPressed: () => _openGoogleMaps(
+                context,
+                order.deliveryLatitude!,
+                order.deliveryLongitude!,
+              ),
+              icon: const Icon(Icons.navigation_rounded),
+              label: const Text('Navigate'),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+Future<void> _openGoogleMaps(
+  BuildContext context,
+  double latitude,
+  double longitude,
+) async {
+  final uri = Uri.parse(
+    'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+  );
+  final launched = await launchUrl(
+    uri,
+    mode: LaunchMode.externalApplication,
+  );
+  if (!launched && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Could not open Google Maps.')),
     );
   }
 }

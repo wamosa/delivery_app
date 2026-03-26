@@ -109,16 +109,31 @@ class AdminRepository {
             final location = data['deliveryLocation'] as Map<String, dynamic>?;
             final latitude = location?['lat'];
             final longitude = location?['lng'];
+            final riderLocation = data['riderLocation'] as Map<String, dynamic>?;
+            final riderLatitude = riderLocation?['lat'];
+            final riderLongitude = riderLocation?['lng'];
+            final riderStamp =
+                (data['riderLocationUpdatedAt'] as Timestamp?)?.toDate();
+            final riderUpdatedAt = riderStamp == null
+                ? null
+                : '${riderStamp.year}-${riderStamp.month.toString().padLeft(2, '0')}-${riderStamp.day.toString().padLeft(2, '0')} ${riderStamp.hour.toString().padLeft(2, '0')}:${riderStamp.minute.toString().padLeft(2, '0')}';
             return OrderSummary(
+              orderId: doc.id,
               orderNumber: '#${doc.id}',
               stage: data['status'] as String? ?? 'pending',
               updatedAt: updatedAt,
               deliveryAddress: data['address'] as String?,
               deliveryLatitude: latitude is num ? latitude.toDouble() : null,
               deliveryLongitude: longitude is num ? longitude.toDouble() : null,
+              riderLatitude:
+                  riderLatitude is num ? riderLatitude.toDouble() : null,
+              riderLongitude:
+                  riderLongitude is num ? riderLongitude.toDouble() : null,
+              riderLocationUpdatedAt: riderUpdatedAt,
               assignedRiderId: data['assignedRiderId'] as String?,
               assignedRiderName: data['assignedRiderName'] as String?,
               assignedRiderEmail: data['assignedRiderEmail'] as String?,
+              trackRiderLocation: data['trackRiderLocation'] as bool? ?? false,
             );
           }).toList(),
         );
@@ -296,6 +311,16 @@ class AdminRepository {
       'assignedRiderName': rider.name,
       'assignedRiderEmail': rider.email,
       'assignedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateOrderTracking({
+    required String orderId,
+    required bool enabled,
+  }) {
+    return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
+      'trackRiderLocation': enabled,
+      'trackRiderLocationUpdatedAt': FieldValue.serverTimestamp(),
     });
   }
 

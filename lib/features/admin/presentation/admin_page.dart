@@ -303,35 +303,39 @@ class _DashboardHomePage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 18),
-            Wrap(
-              spacing: 14,
-              runSpacing: 14,
-              children: [
-                _MetricCard(
-                  title: 'Today\'s orders',
-                  value: '${state.todaysOrdersCount}',
-                  accent: const Color(0xFFE91E63),
-                  icon: Icons.local_shipping_rounded,
-                ),
-                _MetricCard(
-                  title: 'Pending orders',
-                  value: '${state.pendingOrdersCount}',
-                  accent: const Color(0xFFFF78AB),
-                  icon: Icons.pending_actions_rounded,
-                ),
-                _MetricCard(
-                  title: 'Active meal session',
-                  value: state.activeMealSessionName,
-                  accent: const Color(0xFFF06292),
-                  icon: Icons.schedule_rounded,
-                ),
-                _MetricCard(
-                  title: 'Sold out items',
-                  value: '${state.soldOutItemsCount}',
-                  accent: const Color(0xFFAD1457),
-                  icon: Icons.inventory_2_rounded,
-                ),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _MetricCard(
+                    title: 'Today\'s orders',
+                    value: '${state.todaysOrdersCount}',
+                    accent: const Color(0xFFE91E63),
+                    icon: Icons.local_shipping_rounded,
+                  ),
+                  const SizedBox(width: 14),
+                  _MetricCard(
+                    title: 'Pending orders',
+                    value: '${state.pendingOrdersCount}',
+                    accent: const Color(0xFFFF78AB),
+                    icon: Icons.pending_actions_rounded,
+                  ),
+                  const SizedBox(width: 14),
+                  _MetricCard(
+                    title: 'Active meal session',
+                    value: state.activeMealSessionName,
+                    accent: const Color(0xFFF06292),
+                    icon: Icons.schedule_rounded,
+                  ),
+                  const SizedBox(width: 14),
+                  _MetricCard(
+                    title: 'Sold out items',
+                    value: '${state.soldOutItemsCount}',
+                    accent: const Color(0xFFAD1457),
+                    icon: Icons.inventory_2_rounded,
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 18),
             _SectionCard(
@@ -440,7 +444,7 @@ class _OrdersAdminPage extends StatelessWidget {
                         riders: riders,
                         onStatusChanged: (status) async {
                           await controller.updateOrderStatus(
-                            order.orderNumber.replaceFirst('#', ''),
+                            order.orderId,
                             status,
                           );
                           if (context.mounted) {
@@ -455,7 +459,7 @@ class _OrdersAdminPage extends StatelessWidget {
                         },
                         onAssignRider: (rider) async {
                           await controller.assignOrderToRider(
-                            orderId: order.orderNumber.replaceFirst('#', ''),
+                            orderId: order.orderId,
                             rider: rider,
                           );
                           if (context.mounted) {
@@ -463,6 +467,23 @@ class _OrdersAdminPage extends StatelessWidget {
                               SnackBar(
                                 content: Text(
                                   '${order.orderNumber} assigned to ${rider.name.isEmpty ? rider.email : rider.name}.',
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        onTrackingChanged: (enabled) async {
+                          await controller.updateOrderTracking(
+                            orderId: order.orderId,
+                            enabled: enabled,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  enabled
+                                      ? '${order.orderNumber} live tracking enabled.'
+                                      : '${order.orderNumber} live tracking disabled.',
                                 ),
                               ),
                             );
@@ -1181,12 +1202,14 @@ class _OrderCard extends StatelessWidget {
     required this.riders,
     required this.onStatusChanged,
     required this.onAssignRider,
+    required this.onTrackingChanged,
   });
 
   final OrderSummary order;
   final List<AuthUser> riders;
   final ValueChanged<String> onStatusChanged;
   final ValueChanged<AuthUser> onAssignRider;
+  final ValueChanged<bool> onTrackingChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -1237,6 +1260,15 @@ class _OrderCard extends StatelessWidget {
                 'Coords: ${order.deliveryLatitude!.toStringAsFixed(6)}, ${order.deliveryLongitude!.toStringAsFixed(6)}',
               ),
             ],
+            if (order.trackRiderLocation) ...[
+              const SizedBox(height: 6),
+              Text(
+                order.riderLatitude != null && order.riderLongitude != null
+                    ? 'Rider location: ${order.riderLatitude!.toStringAsFixed(6)}, ${order.riderLongitude!.toStringAsFixed(6)}'
+                        '${order.riderLocationUpdatedAt == null ? '' : ' • updated ${order.riderLocationUpdatedAt}'}'
+                    : 'Rider location: awaiting update',
+              ),
+            ],
             const SizedBox(height: 12),
             Text(
               'Assigned rider',
@@ -1270,6 +1302,21 @@ class _OrderCard extends StatelessWidget {
                 }
                 onAssignRider(rider);
               },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Share rider live location',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                Switch(
+                  value: order.trackRiderLocation,
+                  onChanged: onTrackingChanged,
+                ),
+              ],
             ),
             const SizedBox(height: 14),
             Wrap(
