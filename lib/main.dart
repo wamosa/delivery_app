@@ -6,6 +6,21 @@ import 'core/services/app_bootstrap.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  ErrorWidget.builder = (details) {
+    final message = kDebugMode
+        ? 'Widget build failed:\n${details.exceptionAsString()}'
+        : 'Something went wrong. Please try again.';
+    return Material(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          message,
+          style: const TextStyle(color: Colors.redAccent),
+        ),
+      ),
+    );
+  };
   runApp(const _AppStartup());
 }
 

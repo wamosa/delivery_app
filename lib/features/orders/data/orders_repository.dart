@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/firebase/firestore_paths.dart';
+import '../../auth/domain/auth_user.dart';
 import '../domain/order_summary.dart';
 
 class OrdersRepository {
@@ -79,10 +80,38 @@ class OrdersRepository {
         );
   }
 
+  Stream<List<AuthUser>> watchRiders() {
+    return _firestore
+        .collection(FirestorePaths.users)
+        .where('role', isEqualTo: AuthRole.rider.key)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(AuthUser.fromFirestore).toList()
+                ..sort((a, b) {
+                  final aLabel = a.name.isEmpty ? a.email : a.name;
+                  final bLabel = b.name.isEmpty ? b.email : b.name;
+                  return aLabel.toLowerCase().compareTo(bLabel.toLowerCase());
+                }),
+        );
+  }
+
   Future<void> updateOrderStatus(String orderId, String status) {
     return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
       'status': status,
       'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> assignOrderToRider({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
+      'assignedRiderId': rider.id,
+      'assignedRiderName': rider.name,
+      'assignedRiderEmail': rider.email,
+      'assignedAt': FieldValue.serverTimestamp(),
     });
   }
 

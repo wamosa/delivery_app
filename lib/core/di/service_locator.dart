@@ -15,7 +15,6 @@ import '../../features/menu/data/menu_repository.dart';
 import '../../features/orders/application/orders_controller.dart';
 import '../../features/orders/data/orders_repository.dart';
 import '../data/business_settings_repository.dart';
-import '../services/order_functions_service.dart';
 import '../services/notification_service.dart';
 
 final GetIt getIt = GetIt.instance;
@@ -46,12 +45,9 @@ void configureDependencies() {
     () => CartController(repository: getIt<CartRepository>()),
   );
 
-  getIt.registerLazySingleton<OrderFunctionsService>(
-    () => OrderFunctionsService(),
-  );
   getIt.registerLazySingleton<CheckoutRepository>(
     () => CheckoutRepository(
-      orderFunctionsService: getIt<OrderFunctionsService>(),
+      businessSettingsRepository: getIt<BusinessSettingsRepository>(),
     ),
   );
   getIt.registerLazySingleton<CheckoutController>(

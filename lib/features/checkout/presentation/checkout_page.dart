@@ -24,6 +24,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   final TextEditingController _addressController = TextEditingController();
   bool _isSubmitting = false;
   bool _isLocating = false;
+  String _deliveryType = 'delivery';
+  String _paymentMethod = 'M-Pesa';
   String? _message;
   String? _locationMessage;
   double? _latitude;
@@ -37,14 +39,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   @override
   Widget build(BuildContext context) {
-    final preview = _controller.loadPreview();
-
     return FeatureScaffold(
       title: 'Checkout',
-      subtitle:
-          'Place address capture, payment selection, and order confirmation logic here.',
+      subtitle: 'Confirm delivery details and place your order.',
       showThemeToggle: false,
       children: [
+        ValueListenableBuilder<List<CartLineItem>>(
+          valueListenable: _cartController.watchItems(),
+          builder: (context, items, _) {
+            return InfoCard(
+              title: 'Checkout UI loaded',
+              description:
+                  'Items in cart: ${items.length}. If you see this card, the checkout body is rendering.',
+            );
+          },
+        ),
         ValueListenableBuilder<List<CartLineItem>>(
           valueListenable: _cartController.watchItems(),
           builder: (context, items, _) {
@@ -55,7 +64,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               );
             }
 
-            final summary = _cartController.loadSummary();
+            final summary = _cartController.loadSummary(
+              deliveryFee: _deliveryType == 'pickup' ? 0 : 180,
+            );
             final itemLines = items
                 .map(
                   (entry) =>
@@ -71,33 +82,72 @@ class _CheckoutPageState extends State<CheckoutPage> {
           },
         ),
         InfoCard(
+          title: 'Order type',
+          description: 'Choose delivery or pickup.',
+          trailing: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              ChoiceChip(
+                label: const Text('Delivery'),
+                selected: _deliveryType == 'delivery',
+                onSelected: (selected) {
+                  if (!selected) {
+                    return;
+                  }
+                  setState(() {
+                    _deliveryType = 'delivery';
+                  });
+                },
+              ),
+              ChoiceChip(
+                label: const Text('Pickup'),
+                selected: _deliveryType == 'pickup',
+                onSelected: (selected) {
+                  if (!selected) {
+                    return;
+                  }
+                  setState(() {
+                    _deliveryType = 'pickup';
+                    _locationMessage = null;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        InfoCard(
           title: 'Delivery details',
           description:
-              'Enter a readable address and capture your current location for delivery.',
+              _deliveryType == 'pickup'
+                  ? 'Add a note for pickup (optional).'
+                  : 'Enter a readable address and capture your current location for delivery.',
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextField(
                 controller: _addressController,
                 decoration: const InputDecoration(
-                  labelText: 'Delivery address',
+                  labelText: 'Delivery address or pickup note',
                   hintText: 'e.g. Westlands, Nairobi',
                   border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _isLocating ? null : _captureLocation,
-                icon: const Icon(Icons.my_location_rounded),
-                label: Text(
-                  _isLocating ? 'Locating...' : 'Use current location',
+              if (_deliveryType == 'delivery') ...[
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _isLocating ? null : _captureLocation,
+                  icon: const Icon(Icons.my_location_rounded),
+                  label: Text(
+                    _isLocating ? 'Locating...' : 'Use current location',
+                  ),
                 ),
-              ),
-              if (_latitude != null && _longitude != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Location: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
-                ),
+                if (_latitude != null && _longitude != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Location: ${_latitude!.toStringAsFixed(6)}, ${_longitude!.toStringAsFixed(6)}',
+                  ),
+                ],
               ],
               if (_locationMessage != null) ...[
                 const SizedBox(height: 8),
@@ -112,14 +162,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
           ),
         ),
         InfoCard(
-          title: 'Order preview',
-          description:
-              'Deliver to ${preview.address} • Pay with ${preview.paymentMethod} • ETA ${preview.eta}',
+          title: 'Payment method',
+          description: 'Select how you want to pay.',
+          trailing: DropdownButtonFormField<String>(
+            value: _paymentMethod,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: 'M-Pesa', child: Text('M-Pesa')),
+              DropdownMenuItem(value: 'Cash', child: Text('Cash on delivery')),
+            ],
+            onChanged: (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _paymentMethod = value;
+              });
+            },
+          ),
         ),
         InfoCard(
-          title: 'Backend-protected checkout',
+          title: 'Confirm order',
           description: _message ??
-              'Tap the button to place a sample order through Cloud Functions. The server will re-check the meal session and stock before saving the order.',
+              'Tap the button to place your order. You will be redirected to Orders.',
           trailing: FilledButton(
             onPressed: _isSubmitting ? null : _submitSampleOrder,
             child: Text(_isSubmitting ? 'Placing...' : 'Place order'),
@@ -138,17 +205,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
       return;
     }
     final address = _addressController.text.trim();
-    if (address.isEmpty) {
-      setState(() {
-        _message = 'Please enter a delivery address.';
-      });
-      return;
-    }
-    if (_latitude == null || _longitude == null) {
-      setState(() {
-        _message = 'Please capture your delivery location.';
-      });
-      return;
+    if (_deliveryType == 'delivery') {
+      if (address.isEmpty) {
+        setState(() {
+          _message = 'Please enter a delivery address.';
+        });
+        return;
+      }
+      if (_latitude == null || _longitude == null) {
+        setState(() {
+          _message = 'Please capture your delivery location.';
+        });
+        return;
+      }
     }
 
     setState(() {
@@ -167,10 +236,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
               )
               .toList(),
-          deliveryType: 'delivery',
-          address: address,
-          deliveryLatitude: _latitude,
-          deliveryLongitude: _longitude,
+          deliveryType: _deliveryType,
+          address: address.isEmpty ? 'Pickup' : address,
+          deliveryLatitude: _deliveryType == 'delivery' ? _latitude : null,
+          deliveryLongitude: _deliveryType == 'delivery' ? _longitude : null,
         ),
       );
 

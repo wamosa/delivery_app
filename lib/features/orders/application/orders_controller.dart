@@ -1,4 +1,5 @@
 import '../data/orders_repository.dart';
+import '../../auth/domain/auth_user.dart';
 import '../domain/order_summary.dart';
 
 class OrdersController {
@@ -23,8 +24,19 @@ class OrdersController {
     return _repository.watchAdminOrders();
   }
 
+  Stream<List<AuthUser>> watchRiders() {
+    return _repository.watchRiders();
+  }
+
   Future<void> updateOrderStatus(String orderId, String status) {
     return _repository.updateOrderStatus(orderId, status);
+  }
+
+  Future<void> assignOrderToRider({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _repository.assignOrderToRider(orderId: orderId, rider: rider);
   }
 
   Future<void> updateRiderLocation({
