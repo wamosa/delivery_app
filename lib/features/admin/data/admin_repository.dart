@@ -133,6 +133,9 @@ class AdminRepository {
               assignedRiderId: data['assignedRiderId'] as String?,
               assignedRiderName: data['assignedRiderName'] as String?,
               assignedRiderEmail: data['assignedRiderEmail'] as String?,
+              requestedRiderId: data['requestedRiderId'] as String?,
+              requestedRiderName: data['requestedRiderName'] as String?,
+              requestedRiderEmail: data['requestedRiderEmail'] as String?,
               trackRiderLocation: data['trackRiderLocation'] as bool? ?? false,
             );
           }).toList(),

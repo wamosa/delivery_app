@@ -39,6 +39,13 @@ class OrdersController {
     return _repository.assignOrderToRider(orderId: orderId, rider: rider);
   }
 
+  Future<void> requestOrderAssignment({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _repository.requestOrderAssignment(orderId: orderId, rider: rider);
+  }
+
   Future<void> updateRiderLocation({
     required String orderId,
     required double latitude,

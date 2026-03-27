@@ -112,6 +112,22 @@ class OrdersRepository {
       'assignedRiderName': rider.name,
       'assignedRiderEmail': rider.email,
       'assignedAt': FieldValue.serverTimestamp(),
+      'requestedRiderId': null,
+      'requestedRiderName': null,
+      'requestedRiderEmail': null,
+      'requestedAt': null,
+    });
+  }
+
+  Future<void> requestOrderAssignment({
+    required String orderId,
+    required AuthUser rider,
+  }) {
+    return _firestore.collection(FirestorePaths.orders).doc(orderId).update({
+      'requestedRiderId': rider.id,
+      'requestedRiderName': rider.name,
+      'requestedRiderEmail': rider.email,
+      'requestedAt': FieldValue.serverTimestamp(),
     });
   }
 
@@ -157,6 +173,9 @@ class OrdersRepository {
       assignedRiderId: data['assignedRiderId'] as String?,
       assignedRiderName: data['assignedRiderName'] as String?,
       assignedRiderEmail: data['assignedRiderEmail'] as String?,
+      requestedRiderId: data['requestedRiderId'] as String?,
+      requestedRiderName: data['requestedRiderName'] as String?,
+      requestedRiderEmail: data['requestedRiderEmail'] as String?,
       trackRiderLocation: data['trackRiderLocation'] as bool? ?? false,
     );
   }

@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/widgets/role_drawer.dart';
 import '../../../core/widgets/theme_mode_toggle_button.dart';
+import '../../auth/application/auth_controller.dart';
+import '../../auth/domain/auth_user.dart';
 import '../../orders/application/orders_controller.dart';
 import '../../orders/domain/order_statuses.dart';
 import '../../orders/domain/order_summary.dart';
@@ -129,92 +133,143 @@ class _RiderPageState extends State<RiderPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Rider Dashboard'),
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () {},
-        ),
-        actions: [
-          const ThemeModeToggleButton(),
-          SizedBox(
-            width: 220,
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search',
-                prefixIcon: const Icon(Icons.search_rounded),
-                filled: true,
-                fillColor:
-                    Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+    final authController = getIt<AuthController>();
+
+    return StreamBuilder<AuthUser?>(
+      stream: authController.watchAuthUser(),
+      builder: (context, userSnapshot) {
+        final user = userSnapshot.data;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Rider Dashboard'),
+            leading: Builder(
+              builder: (context) => IconButton(
+                icon: const Icon(Icons.menu_rounded),
+                onPressed: () => Scaffold.of(context).openDrawer(),
               ),
             ),
+            actions: [
+              const ThemeModeToggleButton(),
+              SizedBox(
+                width: 220,
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    filled: true,
+                    fillColor: Theme.of(context)
+                        .colorScheme
+                        .surface
+                        .withValues(alpha: 0.6),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              IconButton(
+                icon: const Icon(Icons.notifications_none_rounded),
+                onPressed: () {},
+              ),
+              const SizedBox(width: 4),
+              const CircleAvatar(
+                radius: 16,
+                child: Icon(Icons.person_rounded),
+              ),
+              const SizedBox(width: 12),
+            ],
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            onPressed: () {},
-          ),
-          const SizedBox(width: 4),
-          const CircleAvatar(
-            radius: 16,
-            child: Icon(Icons.person_rounded),
-          ),
-          const SizedBox(width: 12),
-        ],
-      ),
-      body: SafeArea(
-        child: StreamBuilder<List<OrderSummary>>(
-          stream: _ordersStream,
-          builder: (context, snapshot) {
-            final orders = snapshot.data ?? const <OrderSummary>[];
-            final newOrders = orders
-                .where((order) => order.stage == OrderStatuses.ready)
-                .toList();
-            final activeDeliveries = orders
-                .where((order) => order.stage == OrderStatuses.outForDelivery)
-                .toList();
+          drawer: const RoleDrawer(selectedRoute: AppRoutes.rider),
+          body: SafeArea(
+            child: StreamBuilder<List<OrderSummary>>(
+              stream: _ordersStream,
+              builder: (context, snapshot) {
+                final orders = snapshot.data ?? const <OrderSummary>[];
+                final newOrders = orders
+                    .where((order) => order.stage == OrderStatuses.ready)
+                    .toList();
+                final activeDeliveries = orders
+                    .where(
+                      (order) => order.stage == OrderStatuses.outForDelivery,
+                    )
+                    .toList();
+                final isFree = activeDeliveries.isEmpty;
 
-            return ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                Text(
-                  'Rider Dashboard',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Pick up assigned orders, update delivery progress, and confirm drop-offs.',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: const Color(0xFF8A7F8F)),
-                ),
-                const SizedBox(height: 18),
-                _RiderSectionCard(
-                  title: 'New Orders',
-                  count: newOrders.length,
-                  emptyTitle: 'No assigned orders',
-                  emptyMessage:
-                      'Orders assigned to you will appear here once the admin assigns them.',
-                  orders: newOrders,
-                ),
-                const SizedBox(height: 18),
-                _RiderSectionCard(
-                  title: 'Active Deliveries',
-                  count: activeDeliveries.length,
-                  emptyTitle: 'No active deliveries',
-                  emptyMessage:
-                      'You will see active deliveries here after pickup.',
-                  orders: activeDeliveries,
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+                return StreamBuilder<List<OrderSummary>>(
+                  stream: _controller.watchAdminOrders(),
+                  builder: (context, allSnapshot) {
+                    final allOrders =
+                        allSnapshot.data ?? const <OrderSummary>[];
+                    final available = allOrders
+                        .where(
+                          (order) =>
+                              order.stage == OrderStatuses.ready &&
+                              (order.assignedRiderId == null ||
+                                  order.assignedRiderId!.isEmpty),
+                        )
+                        .toList();
+
+                    return ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        Text(
+                          'Rider Dashboard',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Pick up assigned orders, update delivery progress, and confirm drop-offs.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: const Color(0xFF8A7F8F)),
+                        ),
+                        const SizedBox(height: 18),
+                        _RiderSectionCard(
+                          title: 'New Orders',
+                          count: newOrders.length,
+                          emptyTitle: 'No assigned orders',
+                          emptyMessage:
+                              'Orders assigned to you will appear here once the counter assigns them.',
+                          orders: newOrders,
+                        ),
+                        const SizedBox(height: 18),
+                        _RiderSectionCard(
+                          title: 'Active Deliveries',
+                          count: activeDeliveries.length,
+                          emptyTitle: 'No active deliveries',
+                          emptyMessage:
+                              'You will see active deliveries here after pickup.',
+                          orders: activeDeliveries,
+                        ),
+                        const SizedBox(height: 18),
+                        _AvailableDeliveriesCard(
+                          orders: available,
+                          currentUser: user,
+                          isFree: isFree,
+                          onRequest: (order) {
+                            if (user == null) {
+                              return;
+                            }
+                            _controller.requestOrderAssignment(
+                              orderId: order.orderId,
+                              rider: user,
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -353,6 +408,184 @@ class _RiderOrderRow extends StatelessWidget {
               label: const Text('Navigate'),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AvailableDeliveriesCard extends StatelessWidget {
+  const _AvailableDeliveriesCard({
+    required this.orders,
+    required this.currentUser,
+    required this.isFree,
+    required this.onRequest,
+  });
+
+  final List<OrderSummary> orders;
+  final AuthUser? currentUser;
+  final bool isFree;
+  final ValueChanged<OrderSummary> onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE9E1EA),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.storefront_rounded,
+                          size: 14, color: Colors.black54),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Available Deliveries',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      const SizedBox(width: 8),
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor: const Color(0xFF2F7B50),
+                        child: Text(
+                          '${orders.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Icon(
+                  isFree ? Icons.check_circle_rounded : Icons.pause_circle,
+                  color: isFree
+                      ? const Color(0xFF2F7B50)
+                      : const Color(0xFFC97B2A),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              currentUser?.role != AuthRole.rider
+                  ? 'Sign in as a rider to request assignments.'
+                  : isFree
+                      ? 'You are free to request a pickup.'
+                      : 'You are currently busy. Finish active deliveries to request new ones.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: const Color(0xFF8A7F8F)),
+            ),
+            const SizedBox(height: 12),
+            if (orders.isEmpty)
+              const _EmptyState(
+                title: 'No available deliveries',
+                message: 'Ready orders from the counter will appear here.',
+              )
+            else
+              ...orders.map(
+                (order) => _AvailableOrderRow(
+                  order: order,
+                  currentUser: currentUser,
+                  isFree: isFree,
+                  onRequest: () => onRequest(order),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AvailableOrderRow extends StatelessWidget {
+  const _AvailableOrderRow({
+    required this.order,
+    required this.currentUser,
+    required this.isFree,
+    required this.onRequest,
+  });
+
+  final OrderSummary order;
+  final AuthUser? currentUser;
+  final bool isFree;
+  final VoidCallback onRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final address = order.deliveryAddress ?? 'No address provided';
+    final requestedBySelf =
+        currentUser != null && order.requestedRiderId == currentUser!.id;
+    final requestedByOther = order.requestedRiderId != null &&
+        order.requestedRiderId!.isNotEmpty &&
+        !requestedBySelf;
+    final canRequest = currentUser != null &&
+        currentUser!.role == AuthRole.rider &&
+        isFree &&
+        !requestedByOther;
+    final buttonLabel = requestedBySelf
+        ? 'Requested'
+        : requestedByOther
+            ? 'Requested by another rider'
+            : currentUser?.role != AuthRole.rider
+                ? 'Not a rider'
+                : isFree
+                    ? 'Request assignment'
+                    : 'Busy';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: const Color(0xFFE9E1EA),
+            child: Text(
+              order.orderNumber.replaceFirst('#', '').isEmpty
+                  ? '#'
+                  : order.orderNumber.replaceFirst('#', '').substring(0, 1),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.orderNumber,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$address • ${order.stage}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: const Color(0xFF8A7F8F)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton(
+            onPressed: canRequest && !requestedBySelf ? onRequest : null,
+            child: Text(buttonLabel),
+          ),
         ],
       ),
     );

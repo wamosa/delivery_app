@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../core/di/service_locator.dart';
+import '../../../core/widgets/role_drawer.dart';
 import '../../../core/widgets/theme_mode_toggle_button.dart';
 import '../../auth/domain/auth_user.dart';
 import '../../orders/application/orders_controller.dart';
@@ -17,9 +19,11 @@ class CounterPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Counter Dashboard'),
-        leading: IconButton(
-          icon: const Icon(Icons.menu_rounded),
-          onPressed: () {},
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
         ),
         actions: [
           const ThemeModeToggleButton(),
@@ -48,6 +52,7 @@ class CounterPage extends StatelessWidget {
           const SizedBox(width: 12),
         ],
       ),
+      drawer: const RoleDrawer(selectedRoute: AppRoutes.counter),
       body: SafeArea(
         child: StreamBuilder<List<AuthUser>>(
           stream: controller.watchRiders(),
@@ -310,6 +315,9 @@ class _OrderRow extends StatelessWidget {
     final assignedLabel = order.assignedRiderName?.isNotEmpty == true
         ? order.assignedRiderName!
         : order.assignedRiderEmail;
+    final requestedLabel = order.requestedRiderName?.isNotEmpty == true
+        ? order.requestedRiderName!
+        : order.requestedRiderEmail;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -344,6 +352,18 @@ class _OrderRow extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Assigned: $assignedLabel',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: const Color(0xFF6E5B67)),
+                  ),
+                ],
+                if (requestedLabel != null &&
+                    requestedLabel.isNotEmpty &&
+                    (assignedLabel == null || assignedLabel.isEmpty)) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Requested by: $requestedLabel',
                     style: Theme.of(context)
                         .textTheme
                         .bodySmall

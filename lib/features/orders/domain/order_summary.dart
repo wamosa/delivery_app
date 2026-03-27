@@ -13,6 +13,9 @@ class OrderSummary {
     this.assignedRiderId,
     this.assignedRiderName,
     this.assignedRiderEmail,
+    this.requestedRiderId,
+    this.requestedRiderName,
+    this.requestedRiderEmail,
     this.trackRiderLocation = false,
   });
 
@@ -29,5 +32,8 @@ class OrderSummary {
   final String? assignedRiderId;
   final String? assignedRiderName;
   final String? assignedRiderEmail;
+  final String? requestedRiderId;
+  final String? requestedRiderName;
+  final String? requestedRiderEmail;
   final bool trackRiderLocation;
 }
