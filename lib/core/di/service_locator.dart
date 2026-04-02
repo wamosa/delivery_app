@@ -16,6 +16,7 @@ import '../../features/orders/application/orders_controller.dart';
 import '../../features/orders/data/orders_repository.dart';
 import '../data/business_settings_repository.dart';
 import '../services/notification_service.dart';
+import '../services/payments_api_service.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -71,5 +72,9 @@ void configureDependencies() {
 
   getIt.registerLazySingleton<NotificationService>(
     () => NotificationService.instance,
+  );
+
+  getIt.registerLazySingleton<PaymentsApiService>(
+    () => PaymentsApiService(),
   );
 }

@@ -5,6 +5,8 @@ class PlaceOrderRequest {
     required this.items,
     required this.deliveryType,
     required this.address,
+    required this.paymentMethod,
+    this.paymentPhone,
     this.deliveryLatitude,
     this.deliveryLongitude,
   });
@@ -12,6 +14,8 @@ class PlaceOrderRequest {
   final List<PlaceOrderItem> items;
   final String deliveryType;
   final String address;
+  final String paymentMethod;
+  final String? paymentPhone;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
 
@@ -27,6 +31,9 @@ class PlaceOrderRequest {
       'items': items.map((item) => item.toMap()).toList(),
       'deliveryType': deliveryType,
       'address': address,
+      'paymentMethod': paymentMethod,
+      if (paymentPhone != null && paymentPhone!.isNotEmpty)
+        'paymentPhone': paymentPhone,
       if (deliveryLocation != null) 'deliveryLocation': deliveryLocation,
     };
   }

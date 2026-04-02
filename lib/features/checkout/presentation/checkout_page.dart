@@ -7,6 +7,7 @@ import '../../../core/widgets/feature_scaffold.dart';
 import '../../../core/widgets/info_card.dart';
 import '../../cart/application/cart_controller.dart';
 import '../../cart/domain/cart_line_item.dart';
+import '../../auth/application/auth_controller.dart';
 import '../application/checkout_controller.dart';
 import '../domain/place_order_item.dart';
 import '../domain/place_order_request.dart';
@@ -21,7 +22,9 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   final CheckoutController _controller = getIt<CheckoutController>();
   final CartController _cartController = getIt<CartController>();
+  final AuthController _authController = getIt<AuthController>();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   bool _isSubmitting = false;
   bool _isLocating = false;
   String _deliveryType = 'delivery';
@@ -32,8 +35,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
   double? _longitude;
 
   @override
+  void initState() {
+    super.initState();
+    _loadUserPhone();
+  }
+
+  @override
   void dispose() {
     _addressController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -173,6 +183,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
             },
           ),
         ),
+        if (_paymentMethod == 'M-Pesa')
+          InfoCard(
+            title: 'M-Pesa phone',
+            description: 'Enter the number that will receive the STK prompt.',
+            trailing: TextField(
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone number',
+                hintText: '07XXXXXXXX or 2547XXXXXXXX',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+          ),
         InfoCard(
           title: 'Confirm order',
           description: _message ??
@@ -209,6 +233,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
         return;
       }
     }
+    if (_paymentMethod == 'M-Pesa') {
+      if (_phoneController.text.trim().isEmpty) {
+        setState(() {
+          _message = 'Please enter a phone number for M-Pesa.';
+        });
+        return;
+      }
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -228,6 +260,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               .toList(),
           deliveryType: _deliveryType,
           address: address.isEmpty ? 'Pickup' : address,
+          paymentMethod: _paymentMethod,
+          paymentPhone:
+              _paymentMethod == 'M-Pesa' ? _phoneController.text.trim() : null,
           deliveryLatitude: _deliveryType == 'delivery' ? _latitude : null,
           deliveryLongitude: _deliveryType == 'delivery' ? _longitude : null,
         ),
@@ -315,6 +350,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _isLocating = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadUserPhone() async {
+    try {
+      final user = await _authController.loadUser();
+      if (!mounted) {
+        return;
+      }
+      if (_phoneController.text.trim().isEmpty) {
+        _phoneController.text = user.phone;
+      }
+    } catch (_) {
+      // If we cannot load user details, allow manual entry.
     }
   }
 }
